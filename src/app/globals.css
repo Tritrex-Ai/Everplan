@@ -1,26 +1,93 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ---------------------------------------------------------------------------
+   Everplan design system.
+
+   Principles (deliberate, keep consistent):
+   - Flat surfaces. No drop shadows anywhere; depth comes from tonal steps
+     (surface-0 page -> surface-1 card -> surface-2 inset).
+   - Borders are the exception, not the rule. Hairline `--color-line` only
+     where a tone shift can't do the separation.
+   - One accent (Everplan indigo), used sparingly: primary action, focus,
+     live indicators. Everything else is a warm neutral ramp.
+   - OKLCH so tonal steps are perceptually even in light and dark.
+   - The live day-of board runs on the dark ramp (phone, in hand, dim venue).
+--------------------------------------------------------------------------- */
+
+@theme {
+  --font-sans: -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+
+  /* neutral ramp — warm gray, light theme */
+  --color-surface-0: oklch(0.977 0.003 85);   /* page */
+  --color-surface-1: oklch(1 0 0);            /* raised card */
+  --color-surface-2: oklch(0.955 0.004 85);   /* inset: inputs, wells */
+  --color-surface-3: oklch(0.93 0.005 85);    /* pressed / hover of inset */
+  --color-line: oklch(0.9 0.005 85);          /* hairline, use sparingly */
+
+  --color-ink: oklch(0.22 0.012 285);         /* primary text */
+  --color-ink-soft: oklch(0.45 0.012 285);    /* secondary text */
+  --color-ink-faint: oklch(0.62 0.01 285);    /* placeholders, meta */
+
+  /* accent — Everplan indigo */
+  --color-accent: oklch(0.51 0.2 277);
+  --color-accent-strong: oklch(0.45 0.21 277);      /* hover */
+  --color-accent-tint: oklch(0.94 0.03 277);        /* tonal button / chip bg */
+  --color-accent-tint-strong: oklch(0.9 0.05 277);  /* tonal hover */
+  --color-accent-ink: oklch(0.4 0.19 277);          /* text on tint */
+
+  /* semantic */
+  --color-ok: oklch(0.56 0.14 155);
+  --color-ok-tint: oklch(0.94 0.045 155);
+  --color-ok-ink: oklch(0.42 0.12 155);
+  --color-warn: oklch(0.68 0.15 70);
+  --color-warn-tint: oklch(0.95 0.055 80);
+  --color-warn-ink: oklch(0.5 0.13 65);
+  --color-danger: oklch(0.55 0.19 25);
+  --color-danger-tint: oklch(0.94 0.04 25);
+
+  /* dark ramp — the live board */
+  --color-night-0: oklch(0.185 0.012 285);    /* page */
+  --color-night-1: oklch(0.235 0.014 285);    /* card */
+  --color-night-2: oklch(0.285 0.016 285);    /* inset / hover */
+  --color-night-line: oklch(0.33 0.016 285);
+  --color-night-ink: oklch(0.94 0.005 285);
+  --color-night-ink-soft: oklch(0.72 0.01 285);
+  --color-night-accent: oklch(0.72 0.14 277); /* accent lifted for dark bg */
+
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-surface-0);
+  color: var(--color-ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Single focus treatment app-wide: accent ring */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--color-accent-tint-strong);
+}
+
+/* native date/time inputs: keep them on the correct color scheme per surface */
+input[type="date"],
+input[type="time"] {
+  color-scheme: light;
+}
+
+.board-dark input[type="time"] {
+  color-scheme: dark;
 }
