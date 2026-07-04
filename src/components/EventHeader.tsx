@@ -45,7 +45,7 @@ export function EventHeader({
           <Link href="/events" className="text-[13.5px] text-ink-soft hover:text-ink">
             ← My events
           </Link>
-          <h1 className="mt-1 truncate text-[20px] font-semibold tracking-tight">
+          <h1 className="mt-1 truncate font-serif text-[22px] italic leading-tight">
             {event.title}
           </h1>
           <p className="mt-0.5 text-[13.5px] text-ink-soft">

@@ -184,8 +184,8 @@ export function EmptyState({
 }) {
   return (
     <div className="rounded-lg bg-surface-1 px-6 py-12 text-center">
-      <p className="text-[16px] font-semibold">{title}</p>
-      <p className="mx-auto mt-1 max-w-sm text-[14px] text-ink-soft">{body}</p>
+      <p className="font-serif text-[19px] italic">{title}</p>
+      <p className="mx-auto mt-1.5 max-w-sm text-[14px] text-ink-soft">{body}</p>
       {action ? <div className="mt-5 flex justify-center">{action}</div> : null}
     </div>
   );

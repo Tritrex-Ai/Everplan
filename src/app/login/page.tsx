@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Field, Input } from "@/components/ui";
+import { AuthHero, AuthHeroMobile } from "@/components/AuthHero";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,72 +41,76 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-5">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-accent text-[22px] font-bold text-white">
-            E
-          </div>
-          <h1 className="text-[22px] font-semibold tracking-tight">Everplan</h1>
-          <p className="mt-1 text-[14px] text-ink-soft">
-            A real-time timeline for your events
-          </p>
-        </div>
+    <main className="lg:grid lg:min-h-dvh lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      <AuthHero />
+      <AuthHeroMobile />
 
-        <form onSubmit={submit} className="space-y-4 rounded-xl bg-surface-1 p-6">
-          {mode === "signup" && (
-            <Field label="Your name">
+      <div className="flex flex-col justify-center px-6 py-8 sm:px-12 lg:min-h-dvh lg:px-14 xl:px-20">
+        <div className="mx-auto w-full max-w-sm">
+          <h1 className="font-serif text-[28px] italic leading-tight">
+            {mode === "signin" ? "Welcome back" : "Start your first timeline"}
+          </h1>
+          <p className="mt-1.5 text-[14.5px] text-ink-soft">
+            {mode === "signin"
+              ? "Sign in to your studio."
+              : "For wedding photographers and videographers."}
+          </p>
+
+          <form onSubmit={submit} className="mt-8 space-y-4">
+            {mode === "signup" && (
+              <Field label="Your name">
+                <Input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Ade Balogun"
+                  autoComplete="name"
+                />
+              </Field>
+            )}
+            <Field label="Email">
               <Input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ade Balogun"
-                autoComplete="name"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@studio.com"
+                autoComplete="email"
               />
             </Field>
-          )}
-          <Field label="Email">
-            <Input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@studio.com"
-              autoComplete="email"
-            />
-          </Field>
-          <Field label="Password">
-            <Input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete={mode === "signin" ? "current-password" : "new-password"}
-            />
-          </Field>
+            <Field label="Password">
+              <Input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+              />
+            </Field>
 
-          {error && (
-            <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
-              {error}
-            </p>
-          )}
+            {error && (
+              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+                {error}
+              </p>
+            )}
 
-          <Button type="submit" disabled={busy} className="w-full">
-            {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
-          </Button>
-        </form>
+            <Button type="submit" disabled={busy} className="w-full">
+              {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
+            </Button>
+          </form>
 
-        <p className="mt-5 text-center text-[14px] text-ink-soft">
-          {mode === "signin" ? "New to Everplan?" : "Already have an account?"}{" "}
-          <button
-            type="button"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="font-medium text-accent-ink hover:underline"
-          >
-            {mode === "signin" ? "Create an account" : "Sign in"}
-          </button>
-        </p>
+          <p className="mt-6 text-[14px] text-ink-soft">
+            {mode === "signin" ? "New to Everplan?" : "Already have an account?"}{" "}
+            <button
+              type="button"
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              className="font-medium text-accent-ink hover:underline"
+            >
+              {mode === "signin" ? "Create an account" : "Sign in"}
+            </button>
+          </p>
+        </div>
       </div>
     </main>
   );

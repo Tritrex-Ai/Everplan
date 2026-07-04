@@ -17,6 +17,9 @@
 @theme {
   --font-sans: -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  /* editorial serif — the wordmark and hero headlines only; everything
+     functional (forms, data, nav) stays on --font-sans */
+  --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
 
   /* neutral ramp — warm gray, light theme */
   --color-surface-0: oklch(0.977 0.003 85);   /* page */

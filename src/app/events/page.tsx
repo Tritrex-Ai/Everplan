@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/time";
 import { Badge, EmptyState } from "@/components/ui";
 import { SignOutButton } from "@/components/SignOutButton";
+import { Wordmark } from "@/components/Wordmark";
 import type { EventRow } from "@/lib/types";
 
 export default async function EventsPage() {
@@ -20,18 +21,16 @@ export default async function EventsPage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-5 pb-16 pt-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-[15px] font-bold text-white">
-            E
-          </div>
-          <h1 className="text-[20px] font-semibold tracking-tight">My events</h1>
-        </div>
-        <div className="flex items-center gap-1">
+      <header className="mb-7">
+        <div className="mb-5 flex items-center justify-between">
+          <Wordmark />
           <SignOutButton />
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <h1 className="font-serif text-[26px] italic leading-none">My events</h1>
           <Link
             href="/events/new"
-            className="inline-flex h-9 items-center rounded-md bg-accent px-3.5 text-[14px] font-medium text-white hover:bg-accent-strong"
+            className="inline-flex h-9 shrink-0 items-center rounded-md bg-accent px-3.5 text-[14px] font-medium text-white hover:bg-accent-strong"
           >
             + New event
           </Link>
