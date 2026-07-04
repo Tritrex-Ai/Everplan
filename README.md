@@ -10,26 +10,29 @@ realtime, RLS) · Claude API (AI timeline builder).
 
 ## Run it locally
 
-Prereqs: Node 20+, Docker Desktop, the [Supabase CLI](https://supabase.com/docs/guides/cli).
+Prereqs: Node 20+, the [Supabase CLI](https://supabase.com/docs/guides/cli).
+This project runs against a **hosted** Supabase project (no Docker required).
 
 ```bash
 npm install
 
-# 1. Start the local Supabase stack (applies migrations automatically)
-supabase start
+# 1. Create a project at supabase.com, then push the schema + auth config:
+supabase link --project-ref <ref>
+supabase db push
+supabase config push   # disables required email confirmation for this prototype
 
-# 2. Configure env — copy the anon key printed by `supabase status`
+# 2. Configure env — from Project Settings -> API
 cp .env.example .env.local
-#    NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-#    NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from `supabase status`>
+#    NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+#    NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable/anon key>
 #    ANTHROPIC_API_KEY=<your key>   ← needed only for the AI builder
 
 # 3. Run the app
 npm run dev
 ```
 
-Open http://localhost:3000, create an account (no email confirmation locally),
-and you're in.
+Open http://localhost:3000, create an account (no email confirmation needed —
+`config.toml` sets `enable_confirmations = false`), and you're in.
 
 **Try the realtime board:** open the same event's **Live** tab in two browser
 windows (or your phone on the same network), check a shot off in one — it
@@ -41,18 +44,16 @@ member sees the timeline and live board, but only the shots you've shared.
 
 ## Deploying
 
-1. Create a project at [supabase.com](https://supabase.com), then push the schema:
-   `supabase link --project-ref <ref> && supabase db push`
-2. Deploy to Vercel (or any Node host) with these env vars:
+1. Deploy to Vercel (or any Node host) with these env vars:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`
-3. In the Supabase dashboard → Auth, disable "Confirm email" for
-   frictionless prototype signups (or keep it on and configure SMTP).
+2. Before going beyond a prototype audience, re-enable "Confirm email" in the
+   Supabase dashboard → Auth and configure SMTP.
 
 ## Where things live
 
 | Thing | Where |
 |---|---|
-| Schema, RLS, privacy enforcement | `supabase/migrations/20260703000000_init.sql` |
+| Schema, RLS, privacy enforcement | `supabase/migrations/*.sql` |
 | AI builder prompt (tune me) | `src/lib/ai/timeline-prompt.ts` |
 | AI builder endpoint | `src/app/api/generate-timeline/route.ts` |
 | Design tokens (colors, flat/no-shadow system) | `src/app/globals.css` |
@@ -65,7 +66,16 @@ member sees the timeline and live board, but only the shots you've shared.
   private shots are visible only to the event owner; members only ever receive
   rows with `visibility = 'shared'`. A trigger stops non-owners from changing
   a shot's visibility. Realtime respects the same policies, so private shots
-  never reach a team member's device.
+  never reach a team member's device. Verified end-to-end against the live
+  database: a second, non-owner account querying `shots` only ever gets back
+  rows marked `shared`.
+- **The `events` table's own SELECT policy avoids self-referencing `events`.**
+  An earlier version checked membership via a function that re-queried
+  `events` from within itself; that broke every `INSERT ... RETURNING` (which
+  PostgREST/supabase-js always use) because Postgres's command-counter
+  visibility means a row can't see itself via a sub-query within the same
+  command. Fixed in `20260704000000_fix_events_self_reference.sql` — the
+  owner check is now a direct column comparison on the row in hand.
 - **Blocks are time-ranged** (`start_time`/`end_time` timestamps, plus a
   `position` for manual ordering) so the future guest-photo feature can line
   photos up to the timeline without a rebuild. The `event_images` table
