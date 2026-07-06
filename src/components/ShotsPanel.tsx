@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatTime } from "@/lib/time";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
+import { ShotDetailModal } from "@/components/ShotDetailModal";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
 type ShotDraft = {
@@ -29,7 +30,9 @@ export function ShotsPanel({
   const supabase = createClient();
   const [shots, setShots] = useState(initialShots);
   const [draft, setDraft] = useState<ShotDraft | null>(null);
+  const [detailShotId, setDetailShotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const detailShot = shots.find((s) => s.id === detailShotId) ?? null;
 
   const sorted = useMemo(
     () => [...blocks].sort((a, b) => a.position - b.position),
@@ -189,22 +192,32 @@ export function ShotsPanel({
                           >
                             ✓
                           </button>
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className={`truncate text-[14.5px] ${
-                                shot.status === "captured"
-                                  ? "text-ink-faint line-through"
-                                  : ""
-                              }`}
-                            >
-                              {shot.title}
-                            </p>
+                          <button
+                            onClick={() => setDetailShotId(shot.id)}
+                            className="min-w-0 flex-1 text-left"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span
+                                className={`truncate text-[14.5px] ${
+                                  shot.status === "captured"
+                                    ? "text-ink-faint line-through"
+                                    : ""
+                                }`}
+                              >
+                                {shot.title}
+                              </span>
+                              {shot.reference_images.length > 0 && (
+                                <span className="shrink-0 text-[11.5px] text-ink-faint">
+                                  📷{shot.reference_images.length}
+                                </span>
+                              )}
+                            </span>
                             {shot.description && (
-                              <p className="truncate text-[12.5px] text-ink-faint">
+                              <span className="block truncate text-[12.5px] text-ink-faint">
                                 {shot.description}
-                              </p>
+                              </span>
                             )}
-                          </div>
+                          </button>
                           {shot.priority === "high" && <Badge tone="warn">High</Badge>}
                           {isOwner && (
                             <>
@@ -301,6 +314,17 @@ export function ShotsPanel({
           </form>
         )}
       </Modal>
+
+      {detailShot && (
+        <ShotDetailModal
+          shot={detailShot}
+          isOwner={isOwner}
+          onClose={() => setDetailShotId(null)}
+          onChange={(updated) =>
+            setShots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+          }
+        />
+      )}
     </section>
   );
 }

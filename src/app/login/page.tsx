@@ -45,18 +45,18 @@ export default function LoginPage() {
       <AuthHero />
       <AuthHeroMobile />
 
-      <div className="flex flex-col justify-center px-6 py-8 sm:px-12 lg:min-h-dvh lg:px-14 xl:px-20">
-        <div className="mx-auto w-full max-w-sm">
-          <h1 className="font-serif text-[28px] italic leading-tight">
+      <div className="flex flex-col justify-center px-6 py-10 sm:px-14 lg:min-h-dvh lg:px-16 xl:px-24">
+        <div className="mx-auto w-full max-w-lg lg:mx-0 lg:max-w-xl">
+          <h1 className="font-serif text-[38px] italic leading-tight sm:text-[44px]">
             {mode === "signin" ? "Welcome back" : "Start your first timeline"}
           </h1>
-          <p className="mt-1.5 text-[14.5px] text-ink-soft">
+          <p className="mt-2 text-[16px] text-ink-soft">
             {mode === "signin"
               ? "Sign in to your studio."
               : "For wedding photographers and videographers."}
           </p>
 
-          <form onSubmit={submit} className="mt-8 space-y-4">
+          <form onSubmit={submit} className="mt-10 space-y-5">
             {mode === "signup" && (
               <Field label="Your name">
                 <Input
@@ -64,6 +64,7 @@ export default function LoginPage() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Ade Balogun"
                   autoComplete="name"
+                  className="!h-[3.25rem] !text-[16px]"
                 />
               </Field>
             )}
@@ -75,6 +76,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@studio.com"
                 autoComplete="email"
+                className="!h-[3.25rem] !text-[16px]"
               />
             </Field>
             <Field label="Password">
@@ -86,21 +88,22 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                className="!h-[3.25rem] !text-[16px]"
               />
             </Field>
 
             {error && (
-              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+              <p className="rounded-md bg-danger-tint px-3.5 py-2.5 text-[14px] text-danger">
                 {error}
               </p>
             )}
 
-            <Button type="submit" disabled={busy} className="w-full">
+            <Button type="submit" disabled={busy} className="!h-[3.25rem] w-full !text-[16px]">
               {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
 
-          <p className="mt-6 text-[14px] text-ink-soft">
+          <p className="mt-7 text-[15px] text-ink-soft">
             {mode === "signin" ? "New to Everplan?" : "Already have an account?"}{" "}
             <button
               type="button"

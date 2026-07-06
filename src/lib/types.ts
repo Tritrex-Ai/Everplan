@@ -57,6 +57,7 @@ export type ShotRow = {
   visibility: "private" | "shared";
   priority: "low" | "normal" | "high";
   assignee_id: string | null;
+  reference_images: string[];
   captured_by: string | null;
   captured_at: string | null;
 };
