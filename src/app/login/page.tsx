@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Field, Input } from "@/components/ui";
 import { AuthHero, AuthHeroMobile } from "@/components/AuthHero";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,8 +34,11 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/events");
-    router.refresh();
+    // A hard navigation, not router.push(). The auth cookie the browser
+    // client just wrote and the next request's middleware read of it can
+    // race under Next.js's client-side router — a full page load always
+    // sends the fresh cookie with it, so there's nothing to race.
+    window.location.href = "/events";
   }
 
   return (
