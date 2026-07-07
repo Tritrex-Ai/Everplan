@@ -1,5 +1,4 @@
 import { getEventContext } from "@/lib/data";
-import { EventHeader } from "@/components/EventHeader";
 import { ShotsPanel } from "@/components/ShotsPanel";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
@@ -9,7 +8,7 @@ export default async function ShotsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { supabase, event, isOwner, user } = await getEventContext(id);
+  const { supabase, isOwner, user } = await getEventContext(id);
 
   const [{ data: blocks }, { data: shots }] = await Promise.all([
     supabase.from("blocks").select("*").eq("event_id", id).order("position"),
@@ -18,8 +17,7 @@ export default async function ShotsPage({
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 pb-16 pt-6">
-      <EventHeader event={event} isOwner={isOwner} />
+    <div className="mx-auto w-full max-w-2xl">
       <ShotsPanel
         eventId={id}
         blocks={(blocks ?? []) as BlockRow[]}
@@ -27,6 +25,6 @@ export default async function ShotsPage({
         isOwner={isOwner}
         userId={user.id}
       />
-    </main>
+    </div>
   );
 }

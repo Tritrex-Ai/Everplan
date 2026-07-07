@@ -3,9 +3,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Field, Input, Modal, Select } from "@/components/ui";
-import type { MemberRow } from "@/lib/types";
+import type { MemberRole, MemberRow } from "@/lib/types";
+
+const ROLE_LABELS: Record<string, string> = {
+  team: "Team",
+  vendor: "Vendor",
+};
 
 const MEMBER_COLORS = ["#5B5BD6", "#12A594", "#E5484D", "#FFB224", "#8E4EC6"];
+
+type MemberWithProfile = MemberRow & {
+  profile: { full_name: string | null } | null;
+};
 
 export function InviteDialog({
   eventId,
@@ -17,35 +26,29 @@ export function InviteDialog({
   onClose: () => void;
 }) {
   const supabase = createClient();
-  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [members, setMembers] = useState<MemberWithProfile[]>([]);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("team");
+  const [role, setRole] = useState<MemberRole>("team");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadMembers = useCallback(async () => {
     const { data } = await supabase
       .from("members")
-      .select("*")
+      .select("*, profile:profiles(full_name)")
       .eq("event_id", eventId)
       .order("created_at");
-    setMembers((data ?? []) as MemberRow[]);
+    setMembers((data ?? []) as MemberWithProfile[]);
   }, [supabase, eventId]);
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
     supabase
       .from("members")
-      .select("*")
+      .select("*, profile:profiles(full_name)")
       .eq("event_id", eventId)
       .order("created_at")
-      .then(({ data }) => {
-        if (!cancelled) setMembers((data ?? []) as MemberRow[]);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then(({ data }) => setMembers((data ?? []) as MemberWithProfile[]));
   }, [open, supabase, eventId]);
 
   async function invite(e: React.FormEvent) {
@@ -79,7 +82,7 @@ export function InviteDialog({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Invite a team member">
+    <Modal open={open} onClose={onClose} title="Invite to this event">
       <form onSubmit={invite} className="space-y-3">
         <Field
           label="Email"
@@ -94,8 +97,12 @@ export function InviteDialog({
           />
         </Field>
         <Field label="Role">
-          <Select value={role} onChange={(e) => setRole(e.target.value)}>
+          <Select
+            value={role}
+            onChange={(e) => setRole(e.target.value as MemberRole)}
+          >
             <option value="team">Team member (second shooter)</option>
+            <option value="vendor">Vendor</option>
           </Select>
         </Field>
         {error && (
@@ -111,7 +118,7 @@ export function InviteDialog({
       {members.length > 0 && (
         <div className="mt-5">
           <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-ink-faint">
-            Team
+            Team &amp; vendors
           </p>
           <ul className="space-y-1.5">
             {members.map((m) => (
@@ -124,9 +131,19 @@ export function InviteDialog({
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: m.color }}
                   />
-                  <span className="truncate text-[14px]">{m.invited_email}</span>
+                  <span className="min-w-0 truncate text-[14px]">
+                    {m.profile?.full_name || m.invited_email}
+                    {m.profile?.full_name && (
+                      <span className="ml-1.5 text-[12.5px] text-ink-faint">
+                        {m.invited_email}
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  {ROLE_LABELS[m.role] && (
+                    <Badge tone="accent">{ROLE_LABELS[m.role]}</Badge>
+                  )}
                   <Badge tone={m.status === "active" ? "ok" : "neutral"}>
                     {m.status === "active" ? "Joined" : "Invited"}
                   </Badge>

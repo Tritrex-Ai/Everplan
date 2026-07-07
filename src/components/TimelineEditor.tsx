@@ -19,7 +19,8 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
-import { blockTimes, durationLabel, formatTime, toTimeInput } from "@/lib/time";
+import { blockTimes, durationLabel, toTimeInput } from "@/lib/time";
+import { FormattedTime } from "@/components/FormattedTime";
 import { Button, EmptyState, Field, Input, Modal, Textarea } from "@/components/ui";
 import type { BlockRow, EventRow } from "@/lib/types";
 
@@ -289,7 +290,7 @@ function SortableBlock({
         <div className="min-w-0">
           <div className="flex items-baseline gap-2">
             <span className="shrink-0 font-mono text-[13px] font-medium text-accent-ink">
-              {formatTime(block.start_time)}
+              <FormattedTime iso={block.start_time} />
             </span>
             <span className="truncate text-[15px] font-semibold">{block.title}</span>
           </div>

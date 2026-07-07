@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/time";
 import { Badge, EmptyState } from "@/components/ui";
 import { SignOutButton } from "@/components/SignOutButton";
 import { Wordmark } from "@/components/Wordmark";
+import { FormattedDate } from "@/components/FormattedTime";
 import type { EventRow } from "@/lib/types";
 
 export default async function EventsPage() {
@@ -24,7 +24,15 @@ export default async function EventsPage() {
       <header className="mb-7">
         <div className="mb-5 flex items-center justify-between">
           <Wordmark />
-          <SignOutButton />
+          <div className="flex items-center gap-1">
+            <Link
+              href="/account"
+              className="h-9 rounded-md px-3 text-[14px] font-medium text-ink-soft hover:bg-surface-2 flex items-center"
+            >
+              Account
+            </Link>
+            <SignOutButton />
+          </div>
         </div>
         <div className="flex items-end justify-between gap-3">
           <h1 className="font-serif text-[26px] italic leading-none">My events</h1>
@@ -71,7 +79,9 @@ export default async function EventsPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <Badge tone="neutral">{formatDate(event.date)}</Badge>
+                      <Badge tone="neutral">
+                        <FormattedDate date={event.date} />
+                      </Badge>
                       {!isOwner && <Badge tone="accent">Team</Badge>}
                     </div>
                   </div>

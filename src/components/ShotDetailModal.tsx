@@ -29,6 +29,7 @@ export function ShotDetailModal({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,8 +109,18 @@ export function ShotDetailModal({
   }
 
   async function removePhoto(path: string) {
-    setPhotos((prev) => prev.filter((p) => p.path !== path));
-    await supabase.storage.from("shot-photos").remove([path]);
+    setDeletingPath(path);
+    setError(null);
+
+    const { error: storageError } = await supabase.storage
+      .from("shot-photos")
+      .remove([path]);
+    if (storageError) {
+      setError(storageError.message);
+      setDeletingPath(null);
+      return;
+    }
+
     const updated = shot.reference_images.filter((p) => p !== path);
     const { data, error } = await supabase
       .from("shots")
@@ -117,7 +128,17 @@ export function ShotDetailModal({
       .eq("id", shot.id)
       .select("*")
       .single();
-    if (!error && data) onChange(data as ShotRow);
+
+    setDeletingPath(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    // Only drop it from the visible grid once both the storage object and
+    // the DB row are confirmed gone — an optimistic removal here would show
+    // a photo as deleted even if either call actually failed.
+    setPhotos((prev) => prev.filter((p) => p.path !== path));
+    onChange(data as ShotRow);
   }
 
   return (
@@ -226,10 +247,11 @@ export function ShotDetailModal({
                   {isOwner && (
                     <button
                       onClick={() => removePhoto(photo.path)}
+                      disabled={deletingPath === photo.path}
                       aria-label="Remove photo"
-                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink/60 text-[12px] text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-[12px] text-white opacity-80 transition-opacity hover:opacity-100 disabled:opacity-50"
                     >
-                      ✕
+                      {deletingPath === photo.path ? "…" : "✕"}
                     </button>
                   )}
                 </div>

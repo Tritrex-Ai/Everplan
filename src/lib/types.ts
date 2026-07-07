@@ -1,4 +1,4 @@
-export type MemberRole = "owner" | "team" | "coordinator" | "couple";
+export type MemberRole = "owner" | "team" | "vendor" | "coordinator" | "couple";
 
 export type Profile = {
   id: string;
@@ -17,6 +17,7 @@ export type EventRow = {
   guest_count: number | null;
   coverage_needed: string[];
   cover_image_url: string | null;
+  guest_token: string | null;
   created_at: string;
   updated_at: string;
 };

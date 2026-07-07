@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getEventContext } from "@/lib/data";
 import { EventForm } from "@/components/EventForm";
@@ -14,17 +13,9 @@ export default async function EditEventPage({
   if (!isOwner) redirect(`/events/${id}`);
 
   return (
-    <main className="mx-auto w-full max-w-lg px-5 pb-16 pt-6">
-      <header className="mb-6">
-        <Link
-          href={`/events/${id}`}
-          className="text-[14px] text-ink-soft hover:text-ink"
-        >
-          ← {event.title}
-        </Link>
-        <h1 className="mt-2 text-[20px] font-semibold tracking-tight">Edit event</h1>
-      </header>
+    <div className="mx-auto w-full max-w-lg">
+      <h2 className="mb-5 font-serif text-[22px] italic leading-tight">Edit event</h2>
       <EventForm event={event} />
-    </main>
+    </div>
   );
 }

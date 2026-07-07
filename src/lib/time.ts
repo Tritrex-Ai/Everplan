@@ -1,5 +1,13 @@
 import type { BlockRow } from "./types";
 
+/* formatTime/formatDate use the runtime's local timezone, which differs
+ * between the server (SSR) and a viewer's browser — calling them directly
+ * in Server Component JSX (or on a client component's first, server-rendered
+ * pass) makes React throw a hydration error the moment the two disagree.
+ * Always render them through <FormattedTime>/<FormattedDate>
+ * (components/FormattedTime.tsx), which defers the actual formatting to
+ * after mount so server and client never have to agree on a timezone. */
+
 /** Combine an event date (yyyy-mm-dd) and HH:MM into a local-time ISO string. */
 export function combineDateTime(date: string, time: string): string {
   return new Date(`${date}T${time}:00`).toISOString();

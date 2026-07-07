@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { formatTime, splitBoard } from "@/lib/time";
+import { splitBoard } from "@/lib/time";
+import { FormattedTime } from "@/components/FormattedTime";
+import { Button, Modal } from "@/components/ui";
 import type { BlockRow, EventRow, ShotRow } from "@/lib/types";
+
+const REMINDER_WINDOW_MS = 2 * 60 * 1000;
 
 /* The screen that matters: glanceable on a phone, in hand, on the move.
    Runs on the dark ramp; realtime keeps every device within a couple of
@@ -86,6 +90,23 @@ export function LiveBoard({
     return map;
   }, [shots]);
 
+  // "Starting soon" reminder: fires once per block, the moment it comes
+  // within REMINDER_WINDOW_MS of its start. alertedFor is never cleared on
+  // close, so the same block can't reopen it later — only a genuinely
+  // different "next" block (a different id) can trigger it again.
+  const [reminderBlock, setReminderBlock] = useState<BlockRow | null>(null);
+  const alertedFor = useRef<string | null>(null);
+
+  useEffect(() => {
+    const upcoming = board.next[0];
+    if (!upcoming || alertedFor.current === upcoming.id) return;
+    const msUntilStart = new Date(upcoming.start_time).getTime() - now.getTime();
+    if (msUntilStart > 0 && msUntilStart <= REMINDER_WINDOW_MS) {
+      alertedFor.current = upcoming.id;
+      queueMicrotask(() => setReminderBlock(upcoming));
+    }
+  }, [board.next, now]);
+
   async function setBlockStatus(block: BlockRow, status: BlockRow["status"]) {
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, status } : b)));
     await supabase.from("blocks").update({ status }).eq("id", block.id);
@@ -114,7 +135,7 @@ export function LiveBoard({
               ← {event.title}
             </Link>
             <p className="font-mono text-[13px] text-night-ink-soft">
-              {now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+              <FormattedTime iso={now.toISOString()} />
             </p>
           </div>
           <span
@@ -185,6 +206,25 @@ export function LiveBoard({
           </div>
         )}
       </div>
+
+      <Modal
+        open={reminderBlock !== null}
+        onClose={() => setReminderBlock(null)}
+        title="Starting soon"
+      >
+        {reminderBlock && (
+          <div>
+            <p className="text-[19px] font-semibold">{reminderBlock.title}</p>
+            <p className="mt-1 text-[14px] text-ink-soft">
+              Starts at <FormattedTime iso={reminderBlock.start_time} />
+              {reminderBlock.location ? ` · ${reminderBlock.location}` : ""}
+            </p>
+            <Button onClick={() => setReminderBlock(null)} className="mt-4 w-full">
+              Got it
+            </Button>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
@@ -230,7 +270,7 @@ function NowCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-mono text-[13px] font-medium text-night-accent">
-            {formatTime(block.start_time)} – {formatTime(block.end_time)}
+            <FormattedTime iso={block.start_time} /> – <FormattedTime iso={block.end_time} />
           </p>
           <h2 className="mt-0.5 text-[19px] font-bold leading-snug">{block.title}</h2>
           {block.location && (
@@ -338,7 +378,7 @@ function QueueCard({
           </span>
         )}
         <span className="font-mono text-[13px] text-night-ink-soft">
-          {formatTime(block.start_time)}
+          <FormattedTime iso={block.start_time} />
         </span>
       </div>
     </div>
@@ -360,7 +400,7 @@ function PastCard({
       </div>
       <div className="flex shrink-0 items-center gap-2.5">
         <span className="font-mono text-[12.5px] text-night-ink-soft/70">
-          {formatTime(block.start_time)}
+          <FormattedTime iso={block.start_time} />
         </span>
         {block.status !== "done" && (
           <button

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { formatTime } from "@/lib/time";
+import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
 import type { BlockRow, ShotRow } from "@/lib/types";
@@ -155,7 +155,7 @@ export function ShotsPanel({
               <div key={block.id}>
                 <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
                   <p className="min-w-0 truncate text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
-                    {block.title} · {formatTime(block.start_time)}
+                    {block.title} · <FormattedTime iso={block.start_time} />
                   </p>
                   {isOwner && blockShots.length > 0 && (
                     <button

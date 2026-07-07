@@ -31,7 +31,10 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPage = path === "/login";
-  const isProtected = path.startsWith("/events") || path.startsWith("/api");
+  const isProtected =
+    path.startsWith("/events") ||
+    path.startsWith("/api") ||
+    path.startsWith("/account");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();

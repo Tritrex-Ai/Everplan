@@ -1,5 +1,4 @@
 import { getEventContext } from "@/lib/data";
-import { EventHeader } from "@/components/EventHeader";
 import { TimelineEditor } from "@/components/TimelineEditor";
 import type { BlockRow } from "@/lib/types";
 
@@ -18,13 +17,12 @@ export default async function EventTimelinePage({
     .order("position");
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-5 pb-16 pt-6">
-      <EventHeader event={event} isOwner={isOwner} />
+    <div className="mx-auto w-full max-w-2xl">
       <TimelineEditor
         event={event}
         initialBlocks={(blocks ?? []) as BlockRow[]}
         isOwner={isOwner}
       />
-    </main>
+    </div>
   );
 }

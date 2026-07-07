@@ -81,7 +81,9 @@ export function EventForm({ event }: { event?: EventRow }) {
         setBusy(false);
         return;
       }
-      router.push(`/events/${data.id}`);
+      // Straight into the AI builder — describing the day is the natural
+      // next step right after creating the event, not a separate errand.
+      router.push(`/events/${data.id}/generate`);
     }
     router.refresh();
   }
