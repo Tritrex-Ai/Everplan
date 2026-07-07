@@ -34,10 +34,18 @@ export default function LoginPage() {
       return;
     }
 
-    // A hard navigation, not router.push(). The auth cookie the browser
-    // client just wrote and the next request's middleware read of it can
-    // race under Next.js's client-side router — a full page load always
-    // sends the fresh cookie with it, so there's nothing to race.
+    // The browser client writes the session to a cookie via an internal
+    // onAuthStateChange listener that isn't guaranteed to have finished by
+    // the time signInWithPassword's promise resolves. Navigating before it
+    // lands means the middleware's next request reads no session and
+    // bounces back to /login. Poll for the cookie itself — the exact thing
+    // the middleware depends on — before doing a hard navigation (a full
+    // page load, not router.push(), so the fresh cookie always rides along
+    // with the request instead of relying on Next.js's client router).
+    const hasAuthCookie = () => /(?:^|; )sb-[^=]+-auth-token=/.test(document.cookie);
+    for (let i = 0; i < 40 && !hasAuthCookie(); i++) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
     window.location.href = "/events";
   }
 
