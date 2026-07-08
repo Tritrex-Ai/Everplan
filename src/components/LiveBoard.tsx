@@ -83,6 +83,18 @@ export function LiveBoard({
     };
   }, [supabase, event.id]);
 
+  // Fallback: poll every 10 seconds if realtime isn't active (e.g., replication disabled)
+  useEffect(() => {
+    if (live) return;
+    const t = setInterval(async () => {
+      const { data: b } = await supabase.from("blocks").select("*").eq("event_id", event.id);
+      const { data: s } = await supabase.from("shots").select("*").eq("event_id", event.id);
+      if (b) setBlocks(b);
+      if (s) setShots(s);
+    }, 10_000);
+    return () => clearInterval(t);
+  }, [live, event.id, supabase]);
+
   const board = useMemo(() => splitBoard(blocks, now), [blocks, now]);
   const shotsByBlock = useMemo(() => {
     const map = new Map<string, ShotRow[]>();

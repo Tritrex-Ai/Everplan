@@ -45,9 +45,12 @@ export function ShotDetailModal({
       }
       const entries = await Promise.all(
         shot.reference_images.map(async (path) => {
-          const { data } = await supabase.storage
+          const { data, error } = await supabase.storage
             .from("shot-photos")
             .createSignedUrl(path, 3600);
+          if (error && (error.message.includes("Bucket not found") || error.message.includes("row-level security"))) {
+             setError("Storage bucket 'shot-photos' is not configured. Run the storage_setup.sql migration.");
+          }
           return { path, url: data?.signedUrl ?? "" };
         })
       );
@@ -88,7 +91,11 @@ export function ShotDetailModal({
       const path = `${shot.event_id}/${shot.id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("shot-photos").upload(path, file);
       if (error) {
-        setError(error.message);
+        if (error.message.includes("Bucket not found") || error.message.includes("row-level security") || error.message.includes("new row violates row-level security policy")) {
+          setError("Storage bucket is not configured. Run the storage_setup.sql migration.");
+        } else {
+          setError(error.message);
+        }
         continue;
       }
       newPaths.push(path);

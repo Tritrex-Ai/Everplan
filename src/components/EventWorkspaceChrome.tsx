@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedDate } from "@/components/FormattedTime";
 import { InviteDialog } from "@/components/InviteDialog";
@@ -34,6 +34,29 @@ export function EventWorkspaceChrome({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
+  const [onlineCount, setOnlineCount] = useState(1);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase.channel(`presence-${event.id}`, {
+      config: { presence: { key: crypto.randomUUID() } },
+    });
+
+    channel
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState();
+        setOnlineCount(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ online_at: new Date().toISOString() });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [event.id]);
 
   const base = `/events/${event.id}`;
   const active =
@@ -49,7 +72,14 @@ export function EventWorkspaceChrome({
 
   const actionsNavbar = isOwner ? (
     <nav className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
-      <div className="flex-1" />
+      <div className="flex items-center gap-2 flex-1">
+        {onlineCount > 1 && (
+          <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-ok-tint px-2.5 py-1 text-[12px] font-medium text-ok">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ok" />
+            {onlineCount} viewing
+          </span>
+        )}
+      </div>
       <button
         onClick={() => setInviteOpen(true)}
         className="shrink-0 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-sm"

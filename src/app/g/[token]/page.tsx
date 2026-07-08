@@ -20,7 +20,18 @@ export default async function GuestLivePage({
     p_token: token,
   });
   const event = rows?.[0];
-  if (!event) notFound();
+  if (!event) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-surface-0 px-5 text-center">
+        <h1 className="font-serif text-[26px] italic leading-tight text-ink">
+          Link inactive
+        </h1>
+        <p className="mt-2 text-[15px] text-ink-soft max-w-sm">
+          This guest link is no longer active or has been revoked by the event owner.
+        </p>
+      </div>
+    );
+  }
 
   const { data: blocks } = await supabase
     .from("blocks")

@@ -56,19 +56,21 @@ export function InviteDialog({
     setBusy(true);
     setError(null);
 
-    const { error } = await supabase.from("members").insert({
-      event_id: eventId,
-      invited_email: email.trim().toLowerCase(),
-      role,
-      color: MEMBER_COLORS[members.length % MEMBER_COLORS.length],
+    const res = await fetch("/api/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        eventId,
+        email: email.trim().toLowerCase(),
+        role,
+        color: MEMBER_COLORS[members.length % MEMBER_COLORS.length],
+      }),
     });
 
-    if (error) {
-      setError(
-        error.code === "23505"
-          ? "That email is already on this event."
-          : error.message
-      );
+    const json = await res.json();
+
+    if (!res.ok) {
+      setError(json.error || "Failed to invite member.");
     } else {
       setEmail("");
       await loadMembers();
@@ -159,7 +161,7 @@ export function InviteDialog({
           </ul>
           <p className="mt-3 text-[12.5px] leading-relaxed text-ink-faint">
             Invited members join automatically when they sign up with this
-            email — the prototype does not send emails yet.
+            email — an invitation email has been sent.
           </p>
         </div>
       )}

@@ -64,8 +64,11 @@ export async function POST(request: Request) {
 
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY is not set on the server — add it to .env.local." },
-      { status: 500 }
+      { 
+        error: "ANTHROPIC_API_KEY is not set on the server — add it to .env.local.",
+        code: "MISSING_API_KEY"
+      },
+      { status: 503 }
     );
   }
 

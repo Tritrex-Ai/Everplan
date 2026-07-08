@@ -37,7 +37,11 @@ export function GenerateClient({
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error ?? "Generation failed — try again.");
+        if (json.code === "MISSING_API_KEY") {
+          setError("MISSING_API_KEY");
+        } else {
+          setError(json.error ?? "Generation failed — try again.");
+        }
       } else {
         setDrafts(json.blocks as DraftBlock[]);
       }
@@ -113,11 +117,18 @@ export function GenerateClient({
             <><StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Generate timeline</>
           )}
         </Button>
-        {error && (
+        {error === "MISSING_API_KEY" ? (
+          <div className="mt-4 rounded-lg bg-surface-2 p-4 outline outline-2 outline-accent">
+            <h3 className="font-semibold text-accent-ink">API Key Required</h3>
+            <p className="mt-1 text-[13.5px] text-ink-soft">
+              The AI timeline builder requires an Anthropic API key to function. Add <code className="bg-surface-3 px-1 py-0.5 rounded text-[12px] text-ink">ANTHROPIC_API_KEY=sk-ant-...</code> to your <code className="bg-surface-3 px-1 py-0.5 rounded text-[12px] text-ink">.env.local</code> file and restart the server.
+            </p>
+          </div>
+        ) : error ? (
           <p className="mt-3 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
             {error}
           </p>
-        )}
+        ) : null}
       </div>
 
       {drafts && (
