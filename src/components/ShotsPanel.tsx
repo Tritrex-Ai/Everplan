@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
+import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon } from "hugeicons-react";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
 type ShotDraft = {
@@ -120,7 +121,7 @@ export function ShotsPanel({
       {isOwner ? (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent-tint px-4 py-3">
           <p className="text-[13.5px] font-medium text-accent-ink">
-            🔒 Private by default — only you see these
+            <LockKeyIcon size={14} className="inline mr-1 -mt-0.5" /> Private by default — only you see these
           </p>
           {shots.length > 0 && (
             <button
@@ -190,7 +191,7 @@ export function ShotsPanel({
                                 : "bg-surface-2 text-transparent hover:text-ink-faint"
                             }`}
                           >
-                            ✓
+                            <Tick01Icon size={14} />
                           </button>
                           <button
                             onClick={() => setDetailShotId(shot.id)}
@@ -207,8 +208,8 @@ export function ShotsPanel({
                                 {shot.title}
                               </span>
                               {shot.reference_images.length > 0 && (
-                                <span className="shrink-0 text-[11.5px] text-ink-faint">
-                                  📷{shot.reference_images.length}
+                                <span className="shrink-0 flex items-center gap-0.5 text-[11.5px] text-ink-faint">
+                                  <Camera01Icon size={14} className="-mt-0.5" />{shot.reference_images.length}
                                 </span>
                               )}
                             </span>
@@ -239,14 +240,14 @@ export function ShotsPanel({
                                     : "bg-surface-2 text-ink-faint"
                                 }`}
                               >
-                                {shot.visibility === "shared" ? "Shared" : "🔒"}
+                                {shot.visibility === "shared" ? "Shared" : <LockKeyIcon size={12} className="inline" />}
                               </button>
                               <button
                                 onClick={() => deleteShot(shot.id)}
                                 aria-label="Delete shot"
                                 className="shrink-0 text-[13px] text-ink-faint opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
                               >
-                                ✕
+                                <Cancel01Icon size={14} />
                               </button>
                             </>
                           )}

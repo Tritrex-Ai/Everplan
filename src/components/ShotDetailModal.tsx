@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Field, Input, Select, Spinner, Textarea } from "@/components/ui";
+import { Cancel01Icon } from "hugeicons-react";
 import type { ShotRow } from "@/lib/types";
 
 type Photo = { path: string; url: string };
@@ -154,7 +155,7 @@ export function ShotDetailModal({
             aria-label="Close"
             className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-2 hover:text-ink"
           >
-            ✕
+            <Cancel01Icon size={16} />
           </button>
         </div>
 
@@ -251,7 +252,7 @@ export function ShotDetailModal({
                       aria-label="Remove photo"
                       className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-ink/70 text-[12px] text-white opacity-80 transition-opacity hover:opacity-100 disabled:opacity-50"
                     >
-                      {deletingPath === photo.path ? "…" : "✕"}
+                      {deletingPath === photo.path ? "…" : <Cancel01Icon size={14} />}
                     </button>
                   )}
                 </div>

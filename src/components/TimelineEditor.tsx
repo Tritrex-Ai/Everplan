@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { blockTimes, durationLabel, toTimeInput } from "@/lib/time";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Button, EmptyState, Field, Input, Modal, Textarea } from "@/components/ui";
+import { StarsIcon, DragDropVerticalIcon } from "hugeicons-react";
 import type { BlockRow, EventRow } from "@/lib/types";
 
 type BlockDraft = {
@@ -135,7 +136,7 @@ export function TimelineEditor({
             href={`/events/${event.id}/generate`}
             className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-md bg-accent-tint px-4 text-[15px] font-medium text-accent-ink hover:bg-accent-tint-strong"
           >
-            ✦ AI builder
+            <StarsIcon size={16} className="inline mr-1 -mt-0.5" /> AI builder
           </Link>
         </div>
       )}
@@ -278,7 +279,7 @@ function SortableBlock({
           aria-label="Reorder"
           className="flex w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing"
         >
-          ⠿
+          <DragDropVerticalIcon size={20} />
         </button>
       )}
       <button

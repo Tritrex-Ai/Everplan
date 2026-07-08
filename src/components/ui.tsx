@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, useEffect } from "react";
+import { Cancel01Icon } from "hugeicons-react";
 
 /* Flat component kit: tonal surfaces, no shadows, hairlines only when a tone
    shift can't do the job. One accent. */
@@ -155,7 +156,7 @@ export function Modal({
             aria-label="Close"
             className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-2 hover:text-ink"
           >
-            ✕
+            <Cancel01Icon size={16} />
           </button>
         </div>
         {children}

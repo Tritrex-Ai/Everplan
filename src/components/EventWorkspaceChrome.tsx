@@ -33,7 +33,6 @@ export function EventWorkspaceChrome({
   const router = useRouter();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
 
   const base = `/events/${event.id}`;
@@ -48,55 +47,35 @@ export function EventWorkspaceChrome({
     router.refresh();
   }
 
-  const menu = (
-    <div className="relative shrink-0">
+  const actionsNavbar = isOwner ? (
+    <nav className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
+      <div className="flex-1" />
       <button
-        onClick={() => setMenuOpen((v) => !v)}
-        aria-label="Event actions"
-        className="flex h-9 w-9 items-center justify-center rounded-md text-ink-soft hover:bg-surface-2"
+        onClick={() => setInviteOpen(true)}
+        className="shrink-0 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-sm"
       >
-        ⋯
+        Invite team
       </button>
-      {menuOpen && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-44 rounded-lg bg-surface-1 p-1 outline outline-line">
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setInviteOpen(true);
-              }}
-              className="block w-full rounded-md px-3 py-2 text-left text-[14px] hover:bg-surface-2"
-            >
-              Invite team or vendor
-            </button>
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                setGuestLinkOpen(true);
-              }}
-              className="block w-full rounded-md px-3 py-2 text-left text-[14px] hover:bg-surface-2"
-            >
-              Guest link{guestToken ? " — on" : ""}
-            </button>
-            <Link
-              href={`${base}/edit`}
-              onClick={() => setMenuOpen(false)}
-              className="block w-full rounded-md px-3 py-2 text-left text-[14px] hover:bg-surface-2"
-            >
-              Edit event
-            </Link>
-            <button
-              onClick={deleteEvent}
-              className="block w-full rounded-md px-3 py-2 text-left text-[14px] text-danger hover:bg-danger-tint"
-            >
-              Delete event
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+      <button
+        onClick={() => setGuestLinkOpen(true)}
+        className="shrink-0 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
+      >
+        Guest link{guestToken ? " (On)" : ""}
+      </button>
+      <Link
+        href={`${base}/edit`}
+        className="shrink-0 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
+      >
+        Edit event
+      </Link>
+      <button
+        onClick={deleteEvent}
+        className="shrink-0 rounded-lg bg-danger-tint px-4 py-2 text-[13px] font-medium text-danger hover:bg-danger hover:text-white transition-colors"
+      >
+        Delete
+      </button>
+    </nav>
+  ) : null;
 
   return (
     <div className="lg:flex lg:min-h-dvh">
@@ -114,7 +93,6 @@ export function EventWorkspaceChrome({
               <FormattedDate date={event.date} />
             </p>
           </div>
-          {isOwner && menu}
         </div>
         <nav className="flex flex-col gap-1">
           {TABS.map((tab) => (
@@ -148,7 +126,6 @@ export function EventWorkspaceChrome({
               {event.location ? ` · ${event.location}` : ""}
             </p>
           </div>
-          {isOwner && menu}
         </div>
 
         <nav className="mt-4 flex gap-1 rounded-lg bg-surface-2 p-1">
@@ -168,9 +145,12 @@ export function EventWorkspaceChrome({
         </nav>
       </header>
 
-      <main className="min-w-0 flex-1 px-5 pb-16 pt-6 lg:px-10 lg:pb-12 lg:pt-8">
-        {children}
-      </main>
+      <div className="min-w-0 flex-1 flex flex-col">
+        {actionsNavbar}
+        <main className="flex-1 px-5 pb-16 pt-6 lg:px-10 lg:pb-12 lg:pt-8">
+          {children}
+        </main>
+      </div>
 
       <InviteDialog
         eventId={event.id}

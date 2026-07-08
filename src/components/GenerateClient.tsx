@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { blockTimes } from "@/lib/time";
 import { Button, Field, Input, Spinner, Textarea } from "@/components/ui";
+import { StarsIcon, Cancel01Icon } from "hugeicons-react";
 import type { DraftBlock, EventRow } from "@/lib/types";
 
 const EXAMPLE =
@@ -107,9 +108,9 @@ export function GenerateClient({
               <Spinner /> Building your timeline…
             </>
           ) : drafts ? (
-            "✦ Regenerate"
+            <><StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Regenerate</>
           ) : (
-            "✦ Generate timeline"
+            <><StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Generate timeline</>
           )}
         </Button>
         {error && (
@@ -150,7 +151,7 @@ export function GenerateClient({
                     aria-label="Remove block"
                     className="ml-auto shrink-0 rounded-md px-2 py-1 text-[13px] text-ink-faint hover:bg-danger-tint hover:text-danger"
                   >
-                    ✕
+                    <Cancel01Icon size={14} />
                   </button>
                 </div>
                 <Input
