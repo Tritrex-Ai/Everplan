@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedDate } from "@/components/FormattedTime";
 import { InviteDialog } from "@/components/InviteDialog";
 import { GuestLinkDialog } from "@/components/GuestLinkDialog";
+import { AccountMenu } from "@/components/AccountMenu";
 import { Wordmark } from "@/components/Wordmark";
+import { Select } from "@/components/ui";
 import type { EventRow } from "@/lib/types";
 
 const TABS = [
@@ -16,6 +18,11 @@ const TABS = [
   { slug: "live", label: "Live" },
 ];
 
+const PREVIEW_LABELS: Record<string, string> = {
+  team: "Team",
+  readonly: "Read-only",
+};
+
 /** Shared chrome for the event workspace (Timeline/Shots/Edit/Generate) — a
  * sidebar on desktop, the previous compact top-tab bar on mobile/tablet. The
  * Live board is deliberately outside this layout (its own full-bleed dark
@@ -23,18 +30,32 @@ const TABS = [
 export function EventWorkspaceChrome({
   event,
   isOwner,
+  fullName,
+  email,
   children,
 }: {
   event: EventRow;
   isOwner: boolean;
+  fullName: string | null;
+  email: string;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
   const [onlineCount, setOnlineCount] = useState(1);
+
+  // Owner-only "master view": simulate how Team or Read-only would render
+  // this workspace without actually switching accounts. The underlying data
+  // fetch is still the real owner's (RLS still returns everything); child
+  // components filter/hide based on this, not a real permission change.
+  const previewAsRaw = searchParams.get("previewAs");
+  const previewAs = isOwner && (previewAsRaw === "team" || previewAsRaw === "readonly")
+    ? previewAsRaw
+    : null;
 
   useEffect(() => {
     const supabase = createClient();
@@ -62,6 +83,16 @@ export function EventWorkspaceChrome({
   const active =
     TABS.find((t) => t.slug && pathname === `${base}/${t.slug}`)?.slug ?? "";
 
+  const previewSuffix = previewAs ? `?previewAs=${previewAs}` : "";
+
+  function setPreview(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("previewAs", value);
+    else params.delete("previewAs");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
   async function deleteEvent() {
     if (!confirm(`Delete “${event.title}” and its whole timeline?`)) return;
     const supabase = createClient();
@@ -70,7 +101,20 @@ export function EventWorkspaceChrome({
     router.refresh();
   }
 
-  const actionsNavbar = isOwner ? (
+  const previewControl = isOwner ? (
+    <Select
+      value={previewAs ?? ""}
+      onChange={(e) => setPreview(e.target.value)}
+      className="!h-8 !w-auto shrink-0 !text-[12.5px]"
+      aria-label="Preview as"
+    >
+      <option value="">Preview as…</option>
+      <option value="team">Team</option>
+      <option value="readonly">Read-only</option>
+    </Select>
+  ) : null;
+
+  const actionsNavbar = isOwner && !previewAs ? (
     <nav className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
       <div className="flex items-center gap-2 flex-1">
         {onlineCount > 1 && (
@@ -80,6 +124,7 @@ export function EventWorkspaceChrome({
           </span>
         )}
       </div>
+      {previewControl}
       <button
         onClick={() => setInviteOpen(true)}
         className="shrink-0 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-sm"
@@ -107,6 +152,20 @@ export function EventWorkspaceChrome({
     </nav>
   ) : null;
 
+  const previewBanner = previewAs ? (
+    <div className="sticky top-0 z-40 flex items-center justify-between gap-3 bg-accent px-5 py-2.5 text-white lg:px-10">
+      <p className="text-[13px] font-medium">
+        Previewing as {PREVIEW_LABELS[previewAs]} — this is a simulation, your owner access is unchanged.
+      </p>
+      <button
+        onClick={() => setPreview("")}
+        className="shrink-0 rounded-md bg-white/15 px-3 py-1 text-[12.5px] font-semibold hover:bg-white/25"
+      >
+        Exit preview
+      </button>
+    </div>
+  ) : null;
+
   return (
     <div className="lg:flex lg:min-h-dvh">
       {/* Desktop sidebar */}
@@ -128,7 +187,7 @@ export function EventWorkspaceChrome({
           {TABS.map((tab) => (
             <Link
               key={tab.slug}
-              href={tab.slug ? `${base}/${tab.slug}` : base}
+              href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
               className={`rounded-md px-3 py-2 text-[14px] font-medium transition-colors ${
                 active === tab.slug
                   ? "bg-accent-tint text-accent-ink"
@@ -139,6 +198,9 @@ export function EventWorkspaceChrome({
             </Link>
           ))}
         </nav>
+        <div className="mt-auto pt-5">
+          <AccountMenu fullName={fullName} email={email} />
+        </div>
       </aside>
 
       {/* Mobile / tablet top bar */}
@@ -156,13 +218,18 @@ export function EventWorkspaceChrome({
               {event.location ? ` · ${event.location}` : ""}
             </p>
           </div>
+          <AccountMenu fullName={fullName} email={email} compact />
         </div>
+
+        {isOwner && (
+          <div className="mt-3 flex justify-end">{previewControl}</div>
+        )}
 
         <nav className="mt-4 flex gap-1 rounded-lg bg-surface-2 p-1">
           {TABS.map((tab) => (
             <Link
               key={tab.slug}
-              href={tab.slug ? `${base}/${tab.slug}` : base}
+              href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
               className={`flex-1 rounded-md py-2 text-center text-[14px] font-medium transition-colors ${
                 active === tab.slug
                   ? "bg-surface-1 text-ink"
@@ -176,6 +243,7 @@ export function EventWorkspaceChrome({
       </header>
 
       <div className="min-w-0 flex-1 flex flex-col">
+        {previewBanner}
         {actionsNavbar}
         <main className="flex-1 px-5 pb-16 pt-6 lg:px-10 lg:pb-12 lg:pt-8">
           {children}

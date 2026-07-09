@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, EmptyState } from "@/components/ui";
 import { FormattedDate } from "@/components/FormattedTime";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { AccountMenu } from "@/components/AccountMenu";
+import { Wordmark } from "@/components/Wordmark";
 import { Location01Icon, Calendar01Icon } from "hugeicons-react";
 import type { EventRow } from "@/lib/types";
 
@@ -12,21 +14,30 @@ export default async function EventsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .order("date", { ascending: true });
+  const [{ data: events }, { data: profile }] = await Promise.all([
+    supabase.from("events").select("*").order("date", { ascending: true }),
+    user
+      ? supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   const list = (events ?? []) as EventRow[];
+  const fullName = profile?.full_name ?? null;
+  const email = user?.email ?? "";
 
   // Using surface-2 as a neutral image placeholder that fits the color system
   const bgPlaceholder = "bg-surface-2";
 
   return (
     <div className="flex min-h-dvh bg-surface-0/50">
-      <DashboardSidebar />
+      <DashboardSidebar fullName={fullName} email={email} />
 
-      <main className="flex-1 px-8 py-10 overflow-y-auto">
+      <main className="flex-1 px-5 py-6 sm:px-8 sm:py-10 overflow-y-auto">
+        <div className="mb-6 flex items-center justify-between lg:hidden">
+          <Wordmark />
+          <AccountMenu fullName={fullName} email={email} compact />
+        </div>
+
         <header className="mb-10 flex items-center justify-between">
           <div>
             <h1 className="font-sans text-[28px] font-bold tracking-tight text-ink">Events</h1>

@@ -9,10 +9,21 @@ export default async function EventWorkspaceLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { event, isOwner } = await getEventContext(id);
+  const { supabase, event, user, isOwner } = await getEventContext(id);
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
 
   return (
-    <EventWorkspaceChrome event={event} isOwner={isOwner}>
+    <EventWorkspaceChrome
+      event={event}
+      isOwner={isOwner}
+      fullName={profile?.full_name ?? null}
+      email={user.email ?? ""}
+    >
       {children}
     </EventWorkspaceChrome>
   );

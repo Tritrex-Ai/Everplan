@@ -1,7 +1,8 @@
 import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { EventRow } from "@/lib/types";
+import { resolveViewerRole } from "@/lib/roles";
+import type { EventRow, MemberRole } from "@/lib/types";
 
 /** Fetch an event the current user can see (RLS scoped), with their role.
  * Wrapped in React's cache() so the workspace layout and each page can both
@@ -24,10 +25,26 @@ export const getEventContext = cache(async function getEventContext(
 
   if (!event) notFound();
 
+  const isOwner = event.owner_id === user.id;
+
+  let dbRole: MemberRole | null = null;
+  if (!isOwner) {
+    const { data: member } = await supabase
+      .from("members")
+      .select("role")
+      .eq("event_id", eventId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+    dbRole = member?.role ?? null;
+  }
+
   return {
     supabase,
     user,
     event: event as EventRow,
-    isOwner: event.owner_id === user.id,
+    isOwner,
+    dbRole,
+    viewerRole: resolveViewerRole(isOwner, dbRole),
   };
 });

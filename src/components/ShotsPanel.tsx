@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
+import { canCreateShots, canEditShot, canToggleShotStatus, type ViewerRole } from "@/lib/roles";
 import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon } from "hugeicons-react";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
@@ -19,13 +20,13 @@ export function ShotsPanel({
   eventId,
   blocks,
   initialShots,
-  isOwner,
+  viewerRole,
   userId,
 }: {
   eventId: string;
   blocks: BlockRow[];
   initialShots: ShotRow[];
-  isOwner: boolean;
+  viewerRole: ViewerRole;
   userId: string;
 }) {
   const supabase = createClient();
@@ -33,7 +34,21 @@ export function ShotsPanel({
   const [draft, setDraft] = useState<ShotDraft | null>(null);
   const [detailShotId, setDetailShotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const detailShot = shots.find((s) => s.id === detailShotId) ?? null;
+
+  // Owner data fetches include every shot (private + shared, any creator) so
+  // realtime + "preview as" simulation both work off one full list — filter
+  // here to what this viewer would actually be allowed to see, mirroring
+  // the RLS select policy rather than re-fetching for a simulated role.
+  const visibleShots = useMemo(
+    () =>
+      viewerRole === "owner"
+        ? shots
+        : shots.filter((s) => s.created_by === userId || s.visibility === "shared"),
+    [shots, viewerRole, userId]
+  );
+
+  const detailShot = visibleShots.find((s) => s.id === detailShotId) ?? null;
+  const isOwner = viewerRole === "owner";
 
   const sorted = useMemo(
     () => [...blocks].sort((a, b) => a.position - b.position),
@@ -41,11 +56,11 @@ export function ShotsPanel({
   );
   const byBlock = useMemo(() => {
     const map = new Map<string, ShotRow[]>();
-    for (const s of shots) {
+    for (const s of visibleShots) {
       map.set(s.block_id, [...(map.get(s.block_id) ?? []), s]);
     }
     return map;
-  }, [shots]);
+  }, [visibleShots]);
 
   async function toggleShot(shot: ShotRow) {
     const nextStatus = shot.status === "captured" ? "planned" : "captured";
@@ -115,6 +130,8 @@ export function ShotsPanel({
   }
 
   const sharedCount = shots.filter((s) => s.visibility === "shared").length;
+  const canCreate = canCreateShots(viewerRole);
+  const canToggle = canToggleShotStatus(viewerRole);
 
   return (
     <section>
@@ -132,10 +149,16 @@ export function ShotsPanel({
             </button>
           )}
         </div>
+      ) : viewerRole === "team" ? (
+        <div className="mb-4 rounded-lg bg-accent-tint px-4 py-3">
+          <p className="text-[13.5px] font-medium text-accent-ink">
+            <LockKeyIcon size={14} className="inline mr-1 -mt-0.5" /> Your shots are private until you share them — plus anything others have shared with you.
+          </p>
+        </div>
       ) : (
         <div className="mb-4 rounded-lg bg-surface-2 px-4 py-3">
           <p className="text-[13.5px] text-ink-soft">
-            You are seeing the shots the photographer shared with the team.
+            You are seeing the shots that have been shared with you.
           </p>
         </div>
       )}
@@ -171,28 +194,43 @@ export function ShotsPanel({
                 <div className="overflow-hidden rounded-lg bg-surface-1">
                   {blockShots.length === 0 ? (
                     <p className="px-4 py-3.5 text-[14px] text-ink-faint">
-                      {isOwner ? "No shots yet." : "Nothing shared for this block."}
+                      {canCreate ? "No shots yet." : "Nothing shared for this block."}
                     </p>
                   ) : (
                     <ul>
-                      {blockShots.map((shot) => (
+                      {blockShots.map((shot) => {
+                        const editable = canEditShot(viewerRole, shot, userId);
+                        return (
                         <li
                           key={shot.id}
                           className="group flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-line/60"
                         >
-                          <button
-                            onClick={() => toggleShot(shot)}
-                            aria-label={
-                              shot.status === "captured" ? "Mark planned" : "Mark captured"
-                            }
-                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[13px] transition-colors ${
-                              shot.status === "captured"
-                                ? "bg-ok text-white"
-                                : "bg-surface-2 text-transparent hover:text-ink-faint"
-                            }`}
-                          >
-                            <Tick01Icon size={14} />
-                          </button>
+                          {canToggle ? (
+                            <button
+                              onClick={() => toggleShot(shot)}
+                              aria-label={
+                                shot.status === "captured" ? "Mark planned" : "Mark captured"
+                              }
+                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[13px] transition-colors ${
+                                shot.status === "captured"
+                                  ? "bg-ok text-white"
+                                  : "bg-surface-2 text-transparent hover:text-ink-faint"
+                              }`}
+                            >
+                              <Tick01Icon size={14} />
+                            </button>
+                          ) : (
+                            <span
+                              aria-hidden
+                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[13px] ${
+                                shot.status === "captured"
+                                  ? "bg-ok text-white"
+                                  : "bg-surface-2 text-transparent"
+                              }`}
+                            >
+                              <Tick01Icon size={14} />
+                            </span>
+                          )}
                           <button
                             onClick={() => setDetailShotId(shot.id)}
                             className="min-w-0 flex-1 text-left"
@@ -220,7 +258,7 @@ export function ShotsPanel({
                             )}
                           </button>
                           {shot.priority === "high" && <Badge tone="warn">High</Badge>}
-                          {isOwner && (
+                          {editable && (
                             <>
                               <button
                                 onClick={() =>
@@ -231,8 +269,8 @@ export function ShotsPanel({
                                 }
                                 title={
                                   shot.visibility === "shared"
-                                    ? "Shared with team — click to make private"
-                                    : "Private — click to share with team"
+                                    ? "Shared — click to make private"
+                                    : "Private — click to share"
                                 }
                                 className={`shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-medium ${
                                   shot.visibility === "shared"
@@ -252,10 +290,11 @@ export function ShotsPanel({
                             </>
                           )}
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   )}
-                  {isOwner && (
+                  {canCreate && (
                     <button
                       onClick={() =>
                         setDraft({
@@ -319,7 +358,7 @@ export function ShotsPanel({
       {detailShot && (
         <ShotDetailModal
           shot={detailShot}
-          isOwner={isOwner}
+          canEdit={canEditShot(viewerRole, detailShot, userId)}
           onClose={() => setDetailShotId(null)}
           onChange={(updated) =>
             setShots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))

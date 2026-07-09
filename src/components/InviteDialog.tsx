@@ -8,6 +8,7 @@ import type { MemberRole, MemberRow } from "@/lib/types";
 const ROLE_LABELS: Record<string, string> = {
   team: "Team",
   vendor: "Vendor",
+  client: "Client",
 };
 
 const MEMBER_COLORS = ["#5B5BD6", "#12A594", "#E5484D", "#FFB224", "#8E4EC6"];
@@ -105,6 +106,7 @@ export function InviteDialog({
           >
             <option value="team">Team member (second shooter)</option>
             <option value="vendor">Vendor</option>
+            <option value="client">Client (e.g. the couple, a brand contact)</option>
           </Select>
         </Field>
         {error && (
@@ -120,7 +122,7 @@ export function InviteDialog({
       {members.length > 0 && (
         <div className="mt-5">
           <p className="mb-2 text-[13px] font-medium uppercase tracking-wide text-ink-faint">
-            Team &amp; vendors
+            People on this event
           </p>
           <ul className="space-y-1.5">
             {members.map((m) => (

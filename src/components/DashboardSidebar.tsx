@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/Wordmark";
-import { SignOutButton } from "@/components/SignOutButton";
+import { AccountMenu } from "@/components/AccountMenu";
 
 import { DashboardSquare01Icon, UserCircleIcon } from "hugeicons-react";
 
@@ -12,7 +12,13 @@ const NAV_ITEMS = [
   { name: "Account", href: "/account", icon: UserCircleIcon },
 ];
 
-export function DashboardSidebar() {
+export function DashboardSidebar({
+  fullName,
+  email,
+}: {
+  fullName: string | null;
+  email: string;
+}) {
   const pathname = usePathname();
 
   return (
@@ -42,16 +48,7 @@ export function DashboardSidebar() {
       </nav>
 
       <div className="border-t border-line p-4">
-        <div className="flex items-center gap-3 rounded-xl bg-surface-1 p-3 border border-line/50">
-          <div className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-tr from-accent-strong to-accent-tint flex items-center justify-center text-white font-semibold text-[14px]">
-            E
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold text-ink">User</p>
-            <p className="truncate text-[12px] text-ink-soft">Admin</p>
-          </div>
-          <SignOutButton />
-        </div>
+        <AccountMenu fullName={fullName} email={email} />
       </div>
     </aside>
   );

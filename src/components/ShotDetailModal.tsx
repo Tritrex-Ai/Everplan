@@ -10,12 +10,12 @@ type Photo = { path: string; url: string };
 
 export function ShotDetailModal({
   shot,
-  isOwner,
+  canEdit,
   onClose,
   onChange,
 }: {
   shot: ShotRow;
-  isOwner: boolean;
+  canEdit: boolean;
   onClose: () => void;
   onChange: (shot: ShotRow) => void;
 }) {
@@ -166,7 +166,7 @@ export function ShotDetailModal({
           </button>
         </div>
 
-        {isOwner ? (
+        {canEdit ? (
           <div className="space-y-3">
             <Field label="Shot">
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -211,7 +211,7 @@ export function ShotDetailModal({
             <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
               Reference images
             </p>
-            {isOwner && (
+            {canEdit && (
               <button
                 onClick={() => fileInput.current?.click()}
                 disabled={uploading}
@@ -220,7 +220,7 @@ export function ShotDetailModal({
                 {uploading ? "Uploading…" : "+ Add photo"}
               </button>
             )}
-            {isOwner && (
+            {canEdit && (
               <input
                 ref={fileInput}
                 type="file"
@@ -238,7 +238,7 @@ export function ShotDetailModal({
             </div>
           ) : photos.length === 0 ? (
             <p className="rounded-md bg-surface-2 px-4 py-6 text-center text-[13.5px] text-ink-faint">
-              {isOwner
+              {canEdit
                 ? "No reference photos yet — add a pose reference or reminder shot."
                 : "No reference photos on this shot."}
             </p>
@@ -252,7 +252,7 @@ export function ShotDetailModal({
                     alt=""
                     className="h-full w-full rounded-md object-cover"
                   />
-                  {isOwner && (
+                  {canEdit && (
                     <button
                       onClick={() => removePhoto(photo.path)}
                       disabled={deletingPath === photo.path}

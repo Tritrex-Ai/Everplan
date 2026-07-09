@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { splitBoard } from "@/lib/time";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Button, Modal } from "@/components/ui";
+import type { ViewerRole } from "@/lib/roles";
 import type { BlockRow, EventRow, ShotRow } from "@/lib/types";
 
 const REMINDER_WINDOW_MS = 2 * 60 * 1000;
@@ -19,12 +20,15 @@ export function LiveBoard({
   initialBlocks,
   initialShots,
   userId,
+  viewerRole,
 }: {
   event: EventRow;
   initialBlocks: BlockRow[];
   initialShots: ShotRow[];
   userId: string;
+  viewerRole: ViewerRole;
 }) {
+  const canWrite = viewerRole !== "readonly";
   const supabase = useMemo(() => createClient(), []);
   const [blocks, setBlocks] = useState(initialBlocks);
   const [shots, setShots] = useState(initialShots);
@@ -96,11 +100,23 @@ export function LiveBoard({
   }, [live, event.id, supabase]);
 
   const board = useMemo(() => splitBoard(blocks, now), [blocks, now]);
+
+  // Same client-side-filter pattern as ShotsPanel: real non-owner fetches
+  // are already RLS-scoped, but an owner's "preview as" simulation fetches
+  // everything and needs this to render like the simulated role would see.
+  const visibleShots = useMemo(
+    () =>
+      viewerRole === "owner"
+        ? shots
+        : shots.filter((s) => s.created_by === userId || s.visibility === "shared"),
+    [shots, viewerRole, userId]
+  );
+
   const shotsByBlock = useMemo(() => {
     const map = new Map<string, ShotRow[]>();
-    for (const s of shots) map.set(s.block_id, [...(map.get(s.block_id) ?? []), s]);
+    for (const s of visibleShots) map.set(s.block_id, [...(map.get(s.block_id) ?? []), s]);
     return map;
-  }, [shots]);
+  }, [visibleShots]);
 
   // "Starting soon" reminder: fires once per block, the moment it comes
   // within REMINDER_WINDOW_MS of its start. alertedFor is never cleared on
@@ -183,6 +199,7 @@ export function LiveBoard({
                     shots={shotsByBlock.get(block.id) ?? []}
                     onStatus={setBlockStatus}
                     onToggleShot={toggleShot}
+                    canWrite={canWrite}
                   />
                 ))
               )}
@@ -211,7 +228,7 @@ export function LiveBoard({
             {board.past.length > 0 && (
               <BoardSection label="Done / passed">
                 {board.past.map((block) => (
-                  <PastCard key={block.id} block={block} onStatus={setBlockStatus} />
+                  <PastCard key={block.id} block={block} onStatus={setBlockStatus} canWrite={canWrite} />
                 ))}
               </BoardSection>
             )}
@@ -269,11 +286,13 @@ function NowCard({
   shots,
   onStatus,
   onToggleShot,
+  canWrite,
 }: {
   block: BlockRow;
   shots: ShotRow[];
   onStatus: (b: BlockRow, s: BlockRow["status"]) => void;
   onToggleShot: (s: ShotRow) => void;
+  canWrite: boolean;
 }) {
   const captured = shots.filter((s) => s.status === "captured").length;
 
@@ -302,11 +321,13 @@ function NowCard({
             Shots · {captured}/{shots.length}
           </p>
           <ul>
-            {shots.map((shot) => (
+            {shots.map((shot) => {
+              const Tag = canWrite ? "button" : "div";
+              return (
               <li key={shot.id}>
-                <button
-                  onClick={() => onToggleShot(shot)}
-                  className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left hover:bg-night-1"
+                <Tag
+                  onClick={canWrite ? () => onToggleShot(shot) : undefined}
+                  className={`flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left ${canWrite ? "hover:bg-night-1" : ""}`}
                 >
                   <span
                     className={`flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-md text-[12px] ${
@@ -331,13 +352,15 @@ function NowCard({
                       must
                     </span>
                   )}
-                </button>
+                </Tag>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
       )}
 
+      {canWrite && (
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
           onClick={() => onStatus(block, "done")}
@@ -356,6 +379,7 @@ function NowCard({
           {block.status === "late" ? "Back on time" : "Running late"}
         </button>
       </div>
+      )}
     </div>
   );
 }
@@ -400,9 +424,11 @@ function QueueCard({
 function PastCard({
   block,
   onStatus,
+  canWrite,
 }: {
   block: BlockRow;
   onStatus: (b: BlockRow, s: BlockRow["status"]) => void;
+  canWrite: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg bg-night-1/40 px-4 py-2.5">
@@ -414,7 +440,7 @@ function PastCard({
         <span className="font-mono text-[12.5px] text-night-ink-soft/70">
           <FormattedTime iso={block.start_time} />
         </span>
-        {block.status !== "done" && (
+        {canWrite && block.status !== "done" && (
           <button
             onClick={() => onStatus(block, "done")}
             className="rounded-md bg-night-2 px-2.5 py-1 text-[12px] font-medium text-night-ink hover:bg-night-line"

@@ -1,4 +1,4 @@
-export type MemberRole = "owner" | "team" | "vendor" | "coordinator" | "couple";
+export type MemberRole = "owner" | "team" | "vendor" | "client" | "coordinator" | "couple";
 
 export type Profile = {
   id: string;
@@ -61,6 +61,7 @@ export type ShotRow = {
   reference_images: string[];
   captured_by: string | null;
   captured_at: string | null;
+  created_by: string;
 };
 
 /** A block as returned by the AI builder, before it is saved. */

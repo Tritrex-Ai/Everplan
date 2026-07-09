@@ -3,8 +3,11 @@ insert into storage.buckets (id, name, public)
 values ('shot-photos', 'shot-photos', false)
 on conflict (id) do nothing;
 
--- Enable Row Level Security
-alter table storage.objects enable row level security;
+-- storage.objects already has RLS enabled by default on every Supabase
+-- project (Supabase manages this at the platform level) — the migration
+-- role isn't the table owner (supabase_storage_admin is), so an explicit
+-- `alter table storage.objects enable row level security` here fails with
+-- "must be owner of table objects" instead of being a harmless no-op.
 
 -- Policy: Anyone can read shot-photos (or we could limit it to authenticated users)
 -- In Everplan, shots might be viewed by anyone with a guest link if shared, but usually they are authenticated.

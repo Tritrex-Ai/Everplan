@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 const RequestSchema = z.object({
   eventId: z.string().uuid(),
   email: z.string().email(),
-  role: z.enum(["team", "vendor"]),
+  role: z.enum(["team", "vendor", "client"]),
   color: z.string(),
 });
 
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   // Send Email via Resend
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const roleName = role === "team" ? "Team member" : "Vendor";
+    const roleName = role === "team" ? "Team member" : role === "client" ? "Client" : "Vendor";
 
     const { data: event } = await supabase
       .from("events")
