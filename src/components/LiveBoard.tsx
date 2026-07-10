@@ -21,12 +21,14 @@ export function LiveBoard({
   initialShots,
   userId,
   viewerRole,
+  isPreview = false,
 }: {
   event: EventRow;
   initialBlocks: BlockRow[];
   initialShots: ShotRow[];
   userId: string;
   viewerRole: ViewerRole;
+  isPreview?: boolean;
 }) {
   const canWrite = viewerRole !== "readonly";
   const supabase = useMemo(() => createClient(), []);
@@ -103,13 +105,19 @@ export function LiveBoard({
 
   // Same client-side-filter pattern as ShotsPanel: real non-owner fetches
   // are already RLS-scoped, but an owner's "preview as" simulation fetches
-  // everything and needs this to render like the simulated role would see.
+  // everything and needs this to render like the simulated role would see —
+  // and a simulation has no real person behind it, so "own shots" doesn't
+  // apply; only what's actually shared should show.
   const visibleShots = useMemo(
     () =>
       viewerRole === "owner"
         ? shots
-        : shots.filter((s) => s.created_by === userId || s.visibility === "shared"),
-    [shots, viewerRole, userId]
+        : shots.filter((s) =>
+            isPreview
+              ? s.visibility === "shared"
+              : s.created_by === userId || s.visibility === "shared"
+          ),
+    [shots, viewerRole, userId, isPreview]
   );
 
   const shotsByBlock = useMemo(() => {

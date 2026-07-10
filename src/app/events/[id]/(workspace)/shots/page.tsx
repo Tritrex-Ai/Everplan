@@ -20,6 +20,7 @@ export default async function ShotsPage({
     isOwner && (previewAs === "team" || previewAs === "readonly")
       ? previewAs
       : viewerRole;
+  const isPreview = effectiveRole !== viewerRole;
 
   const [{ data: blocks }, { data: shots }] = await Promise.all([
     supabase.from("blocks").select("*").eq("event_id", id).order("position"),
@@ -37,6 +38,7 @@ export default async function ShotsPage({
         initialShots={(shots ?? []) as ShotRow[]}
         viewerRole={effectiveRole}
         userId={user.id}
+        isPreview={isPreview}
       />
     </div>
   );

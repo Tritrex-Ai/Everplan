@@ -6,14 +6,18 @@ import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
 import { canCreateShots, canEditShot, canToggleShotStatus, type ViewerRole } from "@/lib/roles";
+import { durationMinutes } from "@/lib/time";
 import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon } from "hugeicons-react";
 import type { BlockRow, ShotRow } from "@/lib/types";
+
+const DEFAULT_SHOT_MINUTES = 5;
 
 type ShotDraft = {
   blockId: string;
   title: string;
   description: string;
   priority: "low" | "normal" | "high";
+  durationMinutes: number;
 };
 
 export function ShotsPanel({
@@ -22,12 +26,14 @@ export function ShotsPanel({
   initialShots,
   viewerRole,
   userId,
+  isPreview = false,
 }: {
   eventId: string;
   blocks: BlockRow[];
   initialShots: ShotRow[];
   viewerRole: ViewerRole;
   userId: string;
+  isPreview?: boolean;
 }) {
   const supabase = createClient();
   const [shots, setShots] = useState(initialShots);
@@ -39,12 +45,22 @@ export function ShotsPanel({
   // realtime + "preview as" simulation both work off one full list — filter
   // here to what this viewer would actually be allowed to see, mirroring
   // the RLS select policy rather than re-fetching for a simulated role.
+  // A real team member's own shots (any visibility) count as visible; a
+  // simulated preview has no real person behind it, so "own shots" isn't a
+  // thing — only what's actually been shared should show, or an owner's
+  // "preview as Read-only" would incorrectly keep showing their own
+  // private shots (created_by matches the real owner, not a hypothetical
+  // team member).
   const visibleShots = useMemo(
     () =>
       viewerRole === "owner"
         ? shots
-        : shots.filter((s) => s.created_by === userId || s.visibility === "shared"),
-    [shots, viewerRole, userId]
+        : shots.filter((s) =>
+            isPreview
+              ? s.visibility === "shared"
+              : s.created_by === userId || s.visibility === "shared"
+          ),
+    [shots, viewerRole, userId, isPreview]
   );
 
   const detailShot = visibleShots.find((s) => s.id === detailShotId) ?? null;
@@ -120,6 +136,7 @@ export function ShotsPanel({
         title: draft.title,
         description: draft.description || null,
         priority: draft.priority,
+        duration_minutes: draft.durationMinutes,
       })
       .select("*")
       .single();
@@ -175,20 +192,34 @@ export function ShotsPanel({
             const allShared =
               blockShots.length > 0 &&
               blockShots.every((s) => s.visibility === "shared");
+            const plannedMinutes = blockShots.reduce((sum, s) => sum + s.duration_minutes, 0);
+            const allottedMinutes = durationMinutes(block.start_time, block.end_time);
+            const overBudget = plannedMinutes > allottedMinutes;
             return (
               <div key={block.id}>
                 <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
                   <p className="min-w-0 truncate text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
                     {block.title} · <FormattedTime iso={block.start_time} />
                   </p>
-                  {isOwner && blockShots.length > 0 && (
-                    <button
-                      onClick={() => shareBlock(block.id, allShared ? "private" : "shared")}
-                      className="shrink-0 text-[12.5px] font-medium text-accent-ink hover:underline"
-                    >
-                      {allShared ? "Unshare block" : "Share block"}
-                    </button>
-                  )}
+                  <div className="flex shrink-0 items-center gap-3">
+                    {blockShots.length > 0 && (
+                      <span
+                        className={`text-[12px] font-medium ${
+                          overBudget ? "text-warn-ink" : "text-ink-faint"
+                        }`}
+                      >
+                        {plannedMinutes} of {allottedMinutes} min planned
+                      </span>
+                    )}
+                    {isOwner && blockShots.length > 0 && (
+                      <button
+                        onClick={() => shareBlock(block.id, allShared ? "private" : "shared")}
+                        className="text-[12.5px] font-medium text-accent-ink hover:underline"
+                      >
+                        {allShared ? "Unshare block" : "Share block"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="overflow-hidden rounded-lg bg-surface-1">
@@ -302,6 +333,7 @@ export function ShotsPanel({
                           title: "",
                           description: "",
                           priority: "normal",
+                          durationMinutes: DEFAULT_SHOT_MINUTES,
                         })
                       }
                       className="block w-full bg-surface-2/50 px-4 py-2.5 text-left text-[13.5px] font-medium text-accent-ink hover:bg-accent-tint/50"
@@ -336,18 +368,30 @@ export function ShotsPanel({
                 placeholder="Pose reference, lens, reminder…"
               />
             </Field>
-            <Field label="Priority">
-              <Select
-                value={draft.priority}
-                onChange={(e) =>
-                  setDraft({ ...draft, priority: e.target.value as ShotDraft["priority"] })
-                }
-              >
-                <option value="normal">Normal</option>
-                <option value="high">Must-get</option>
-                <option value="low">Nice to have</option>
-              </Select>
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Priority">
+                <Select
+                  value={draft.priority}
+                  onChange={(e) =>
+                    setDraft({ ...draft, priority: e.target.value as ShotDraft["priority"] })
+                  }
+                >
+                  <option value="normal">Normal</option>
+                  <option value="high">Must-get</option>
+                  <option value="low">Nice to have</option>
+                </Select>
+              </Field>
+              <Field label="Minutes needed">
+                <Input
+                  type="number"
+                  min={1}
+                  value={draft.durationMinutes}
+                  onChange={(e) =>
+                    setDraft({ ...draft, durationMinutes: Number(e.target.value) || 1 })
+                  }
+                />
+              </Field>
+            </div>
             <Button type="submit" disabled={busy} className="w-full">
               {busy ? "Adding…" : "Add shot"}
             </Button>

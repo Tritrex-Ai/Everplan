@@ -47,10 +47,14 @@ export function formatDate(date: string): string {
   });
 }
 
-export function durationLabel(startIso: string, endIso: string): string {
-  const mins = Math.round(
+export function durationMinutes(startIso: string, endIso: string): number {
+  return Math.round(
     (new Date(endIso).getTime() - new Date(startIso).getTime()) / 60000
   );
+}
+
+export function durationLabel(startIso: string, endIso: string): string {
+  const mins = durationMinutes(startIso, endIso);
   if (mins < 60) return `${mins}m`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;

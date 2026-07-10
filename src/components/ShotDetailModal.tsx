@@ -25,6 +25,7 @@ export function ShotDetailModal({
   const [title, setTitle] = useState(shot.title);
   const [description, setDescription] = useState(shot.description ?? "");
   const [priority, setPriority] = useState(shot.priority);
+  const [durationMinutes, setDurationMinutes] = useState(shot.duration_minutes);
   const [saving, setSaving] = useState(false);
 
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -69,7 +70,7 @@ export function ShotDetailModal({
     setError(null);
     const { data, error } = await supabase
       .from("shots")
-      .update({ title, description: description || null, priority })
+      .update({ title, description: description || null, priority, duration_minutes: durationMinutes })
       .eq("id", shot.id)
       .select("*")
       .single();
@@ -178,16 +179,26 @@ export function ShotDetailModal({
                 onChange={(e) => setDescription(e.target.value)}
               />
             </Field>
-            <Field label="Priority">
-              <Select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as ShotRow["priority"])}
-              >
-                <option value="normal">Normal</option>
-                <option value="high">Must-get</option>
-                <option value="low">Nice to have</option>
-              </Select>
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Priority">
+                <Select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as ShotRow["priority"])}
+                >
+                  <option value="normal">Normal</option>
+                  <option value="high">Must-get</option>
+                  <option value="low">Nice to have</option>
+                </Select>
+              </Field>
+              <Field label="Minutes needed">
+                <Input
+                  type="number"
+                  min={1}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(Number(e.target.value) || 1)}
+                />
+              </Field>
+            </div>
             <Button size="sm" variant="tonal" onClick={saveDetails} disabled={saving}>
               {saving ? "Saving…" : "Save changes"}
             </Button>

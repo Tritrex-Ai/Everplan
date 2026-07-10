@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Field, Input, Modal, Select } from "@/components/ui";
-import type { MemberRole, MemberRow } from "@/lib/types";
+import { PROFESSION_LABELS, type MemberRole, type MemberRow, type Profession } from "@/lib/types";
 
 const ROLE_LABELS: Record<string, string> = {
   team: "Team",
@@ -14,7 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
 const MEMBER_COLORS = ["#5B5BD6", "#12A594", "#E5484D", "#FFB224", "#8E4EC6"];
 
 type MemberWithProfile = MemberRow & {
-  profile: { full_name: string | null } | null;
+  profile: { full_name: string | null; professions: Profession[] } | null;
 };
 
 export function InviteDialog({
@@ -36,7 +36,7 @@ export function InviteDialog({
   const loadMembers = useCallback(async () => {
     const { data } = await supabase
       .from("members")
-      .select("*, profile:profiles(full_name)")
+      .select("*, profile:profiles(full_name, professions)")
       .eq("event_id", eventId)
       .order("created_at");
     setMembers((data ?? []) as MemberWithProfile[]);
@@ -46,7 +46,7 @@ export function InviteDialog({
     if (!open) return;
     supabase
       .from("members")
-      .select("*, profile:profiles(full_name)")
+      .select("*, profile:profiles(full_name, professions)")
       .eq("event_id", eventId)
       .order("created_at")
       .then(({ data }) => setMembers((data ?? []) as MemberWithProfile[]));
@@ -135,11 +135,18 @@ export function InviteDialog({
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ background: m.color }}
                   />
-                  <span className="min-w-0 truncate text-[14px]">
-                    {m.profile?.full_name || m.invited_email}
-                    {m.profile?.full_name && (
-                      <span className="ml-1.5 text-[12.5px] text-ink-faint">
-                        {m.invited_email}
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px]">
+                      {m.profile?.full_name || m.invited_email}
+                      {m.profile?.full_name && (
+                        <span className="ml-1.5 text-[12.5px] text-ink-faint">
+                          {m.invited_email}
+                        </span>
+                      )}
+                    </span>
+                    {m.profile?.professions && m.profile.professions.length > 0 && (
+                      <span className="block truncate text-[12px] text-ink-faint">
+                        {m.profile.professions.map((p) => PROFESSION_LABELS[p]).join(", ")}
                       </span>
                     )}
                   </span>

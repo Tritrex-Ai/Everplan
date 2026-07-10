@@ -18,6 +18,7 @@ export default async function LiveBoardPage({
     isOwner && (previewAs === "team" || previewAs === "readonly")
       ? previewAs
       : viewerRole;
+  const isPreview = effectiveRole !== viewerRole;
 
   const [{ data: blocks }, { data: shots }] = await Promise.all([
     supabase.from("blocks").select("*").eq("event_id", id),
@@ -31,6 +32,7 @@ export default async function LiveBoardPage({
       initialShots={(shots ?? []) as ShotRow[]}
       userId={user.id}
       viewerRole={effectiveRole}
+      isPreview={isPreview}
     />
   );
 }

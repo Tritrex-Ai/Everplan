@@ -1,9 +1,31 @@
 export type MemberRole = "owner" | "team" | "vendor" | "client" | "coordinator" | "couple";
 
+/** Self-reported, descriptive only — never used for permissions. A person
+ * can hold more than one. */
+export const PROFESSIONS = [
+  "coordinator",
+  "photographer",
+  "videographer",
+  "content_creator",
+  "media_house",
+  "bride_couple",
+] as const;
+export type Profession = (typeof PROFESSIONS)[number];
+
+export const PROFESSION_LABELS: Record<Profession, string> = {
+  coordinator: "Coordinator",
+  photographer: "Photographer",
+  videographer: "Videographer",
+  content_creator: "Content creator",
+  media_house: "Media house",
+  bride_couple: "Solo bride/couple",
+};
+
 export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
+  professions: Profession[];
 };
 
 export type EventRow = {
@@ -62,6 +84,7 @@ export type ShotRow = {
   captured_by: string | null;
   captured_at: string | null;
   created_by: string;
+  duration_minutes: number;
 };
 
 /** A block as returned by the AI builder, before it is saved. */
