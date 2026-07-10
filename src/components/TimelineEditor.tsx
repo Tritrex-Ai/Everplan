@@ -22,7 +22,7 @@ import { createClient } from "@/lib/supabase/client";
 import { blockTimes, durationLabel, toTimeInput } from "@/lib/time";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Button, EmptyState, Field, Input, Modal, Textarea } from "@/components/ui";
-import { StarsIcon, DragDropVerticalIcon } from "hugeicons-react";
+import { StarsIcon, DragDropVerticalIcon, EyeIcon, ViewOffIcon } from "hugeicons-react";
 import type { BlockRow, EventRow } from "@/lib/types";
 
 type BlockDraft = {
@@ -125,6 +125,14 @@ export function TimelineEditor({
     await supabase.from("blocks").delete().eq("id", id);
   }
 
+  async function toggleGuestVisible(block: BlockRow) {
+    const guest_visible = !block.guest_visible;
+    setBlocks((prev) =>
+      prev.map((b) => (b.id === block.id ? { ...b, guest_visible } : b))
+    );
+    await supabase.from("blocks").update({ guest_visible }).eq("id", block.id);
+  }
+
   return (
     <section>
       {isOwner && (
@@ -176,6 +184,7 @@ export function TimelineEditor({
                       notes: block.notes ?? "",
                     })
                   }
+                  onToggleGuestVisible={() => toggleGuestVisible(block)}
                 />
               ))}
             </ul>
@@ -256,10 +265,12 @@ function SortableBlock({
   block,
   canEdit,
   onEdit,
+  onToggleGuestVisible,
 }: {
   block: BlockRow;
   canEdit: boolean;
   onEdit: () => void;
+  onToggleGuestVisible: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !canEdit });
@@ -305,6 +316,22 @@ function SortableBlock({
           {durationLabel(block.start_time, block.end_time)}
         </span>
       </button>
+      {canEdit && (
+        <button
+          onClick={onToggleGuestVisible}
+          aria-label={block.guest_visible ? "Hide from guests" : "Show to guests"}
+          title={
+            block.guest_visible
+              ? "Visible to guests — click to hide"
+              : "Hidden from guests — click to show"
+          }
+          className={`flex w-9 shrink-0 items-center justify-center ${
+            block.guest_visible ? "text-ink-faint hover:text-ink" : "text-ink-faint/50 hover:text-ink-faint"
+          }`}
+        >
+          {block.guest_visible ? <EyeIcon size={17} /> : <ViewOffIcon size={17} />}
+        </button>
+      )}
     </li>
   );
 }

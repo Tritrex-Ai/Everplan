@@ -66,6 +66,7 @@ export type BlockRow = {
   location: string | null;
   notes: string | null;
   status: BlockStatus;
+  guest_visible: boolean;
 };
 
 export type ShotStatus = "planned" | "captured" | "skipped";

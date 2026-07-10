@@ -99,7 +99,8 @@ export function GuestLinkDialog({
         <div>
           <p className="text-[14px] leading-relaxed text-ink-soft">
             Anyone with this link or QR code can view the live timeline —
-            no account needed. Turn it off any time.
+            no account needed. Only blocks you&apos;ve marked visible to
+            guests will show up here. Turn it off any time.
           </p>
 
           {qrDataUrl && (
