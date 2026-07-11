@@ -26,6 +26,8 @@ export type Profile = {
   email: string;
   full_name: string | null;
   professions: Profession[];
+  onboarding_completed: boolean;
+  team_size: "solo" | "team" | null;
 };
 
 export type EventRow = {

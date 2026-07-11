@@ -6,10 +6,16 @@ import { createClient } from "@/lib/supabase/client";
 import { Button, Field, Input } from "@/components/ui";
 import { PROFESSIONS, PROFESSION_LABELS, type Profession, type Profile } from "@/lib/types";
 
+const TEAM_SIZES: { value: "solo" | "team"; label: string }[] = [
+  { value: "solo", label: "Solo" },
+  { value: "team", label: "Team" },
+];
+
 export function AccountForm({ profile }: { profile: Profile }) {
   const router = useRouter();
   const [fullName, setFullName] = useState(profile.full_name ?? "");
   const [professions, setProfessions] = useState<Profession[]>(profile.professions ?? []);
+  const [teamSize, setTeamSize] = useState<"solo" | "team" | null>(profile.team_size);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -30,7 +36,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
     const supabase = createClient();
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName || null, professions })
+      .update({ full_name: fullName || null, professions, team_size: teamSize })
       .eq("id", profile.id);
 
     setBusy(false);
@@ -79,6 +85,31 @@ export function AccountForm({ profile }: { profile: Profile }) {
               }`}
             >
               {PROFESSION_LABELS[p]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <span className="mb-1.5 block text-[13px] font-medium uppercase tracking-wide text-ink-faint">
+          Working solo or with a team?
+        </span>
+        <div className="flex gap-2">
+          {TEAM_SIZES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => {
+                setTeamSize(t.value);
+                setSaved(false);
+              }}
+              className={`h-9 rounded-md px-4 text-[14px] font-medium transition-colors ${
+                teamSize === t.value
+                  ? "bg-accent-tint text-accent-ink"
+                  : "bg-surface-2 text-ink-faint hover:text-ink-soft"
+              }`}
+            >
+              {t.label}
             </button>
           ))}
         </div>

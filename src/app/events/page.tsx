@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, EmptyState } from "@/components/ui";
 import { FormattedDate } from "@/components/FormattedTime";
@@ -17,9 +18,15 @@ export default async function EventsPage() {
   const [{ data: events }, { data: profile }] = await Promise.all([
     supabase.from("events").select("*").order("date", { ascending: true }),
     user
-      ? supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle()
+      ? supabase
+          .from("profiles")
+          .select("full_name, onboarding_completed")
+          .eq("id", user.id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  if (profile && !profile.onboarding_completed) redirect("/onboarding");
 
   const list = (events ?? []) as EventRow[];
   const fullName = profile?.full_name ?? null;
