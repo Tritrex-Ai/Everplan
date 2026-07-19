@@ -71,9 +71,14 @@ export function EventForm({ event }: { event?: EventRow }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Lost connection to your account. Please try again.");
+        setBusy(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("events")
-        .insert({ ...payload, owner_id: user!.id })
+        .insert({ ...payload, owner_id: user.id })
         .select("id")
         .single();
       if (error || !data) {

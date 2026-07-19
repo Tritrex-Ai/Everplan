@@ -5,9 +5,14 @@ import type { BlockRow } from "@/lib/types";
 
 /** Public, no-login route: a guest scans a QR code or opens a shared link
  * and lands straight on a read-only Now/Next/Later view — never the shot
- * list. Access is entirely governed by RLS (see the
- * 20260707000000_vendor_role_and_guest_sharing.sql migration), not by
- * anything in this page. */
+ * list. Row access is governed by RLS (see the
+ * 20260707000000_vendor_role_and_guest_sharing.sql migration), but the
+ * "members can view blocks" policy (authenticated role) has no
+ * guest_visible check — it exists for the owner's own timeline editor, not
+ * this page. If the visitor happens to be logged in as a member of this
+ * event (e.g. the owner testing their own guest link), RLS alone would let
+ * hidden blocks through via that policy. The explicit filter below makes
+ * this page's own guest_visible enforcement independent of who's viewing. */
 export default async function GuestLivePage({
   params,
 }: {
@@ -37,6 +42,7 @@ export default async function GuestLivePage({
     .from("blocks")
     .select("*")
     .eq("event_id", event.id)
+    .eq("guest_visible", true)
     .order("position");
 
   return (

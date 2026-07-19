@@ -40,12 +40,20 @@ export function GuestLiveBoard({
         "postgres_changes",
         { event: "*", schema: "public", table: "blocks", filter: `event_id=eq.${event.id}` },
         (payload) => {
+          const row = payload.new as BlockRow;
           if (payload.eventType === "INSERT") {
-            setBlocks((prev) => [...prev, payload.new as BlockRow]);
+            if (row.guest_visible) {
+              setBlocks((prev) => [...prev, row]);
+            }
           } else if (payload.eventType === "UPDATE") {
-            setBlocks((prev) =>
-              prev.map((b) => (b.id === (payload.new as BlockRow).id ? (payload.new as BlockRow) : b))
-            );
+            setBlocks((prev) => {
+              if (row.guest_visible) {
+                return prev.some((b) => b.id === row.id)
+                  ? prev.map((b) => (b.id === row.id ? row : b))
+                  : [...prev, row];
+              }
+              return prev.filter((b) => b.id !== row.id);
+            });
           } else if (payload.eventType === "DELETE") {
             setBlocks((prev) => prev.filter((b) => b.id !== (payload.old as { id: string }).id));
           }
