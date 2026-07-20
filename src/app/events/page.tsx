@@ -76,19 +76,21 @@ export default async function EventsPage() {
             {list.map((event, index) => {
               const isOwner = event.owner_id === user?.id;
               return (
-                <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface-1 ring-1 ring-line/40 transition-all hover:-translate-y-1">
+                <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-[20px] bg-surface-1 border border-black/[0.04] transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
                   <Link href={`/events/${event.id}`} className="absolute inset-0 z-10">
                     <span className="sr-only">View event {event.title}</span>
                   </Link>
                   
                   {/* Card Header (Image Placeholder) */}
-                  <div className={`h-40 w-full ${bgPlaceholder} p-4 flex flex-col justify-between`}>
-                    <div className="flex justify-between items-start">
-                      <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-semibold text-ink backdrop-blur-md">
+                  <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-accent/20 via-[#FDFBF7] to-[#FFE5D9] flex flex-col justify-end p-4">
+                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]"></div>
+                    
+                    <div className="relative z-10 flex justify-start items-center gap-2">
+                      <span className="inline-flex rounded-full bg-white/40 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-white/40 shadow-sm">
                         {event.event_type || "Event"}
                       </span>
                       {!isOwner && (
-                        <span className="inline-flex rounded-full bg-surface-1/90 px-2.5 py-1 text-[12px] font-semibold text-ink backdrop-blur-md">
+                        <span className="inline-flex rounded-full bg-white/40 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-white/40 shadow-sm">
                           Team
                         </span>
                       )}
@@ -97,23 +99,27 @@ export default async function EventsPage() {
                   
                   {/* Card Body */}
                   <div className="flex flex-col p-5">
-                    <h3 className="truncate font-sans text-[18px] font-bold text-ink mb-1 group-hover:text-accent transition-colors">
+                    <h3 className="truncate font-sans text-[19px] font-extrabold text-ink mb-0.5 group-hover:text-accent transition-colors">
                       {event.title}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[14px] text-ink-soft mb-4">
-                      <Location01Icon size={16} strokeWidth={2} />
+                    <div className="flex items-center gap-1.5 text-[14px] text-ink-soft mb-5">
+                      <Location01Icon size={15} strokeWidth={2.5} />
                       <span className="truncate">{event.location || "No location set"}</span>
                     </div>
                     
-                    <div className="mt-auto border-t border-line/50 pt-4 flex items-center justify-between">
+                    <div className="mt-auto border-t border-line/30 pt-4 flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-[14px] font-medium text-ink">
-                        <Calendar01Icon size={16} strokeWidth={2} />
+                        <Calendar01Icon size={15} strokeWidth={2} />
                         <FormattedDate date={event.date} />
                       </div>
                       
                       <div className="flex -space-x-2">
                         {/* Placeholder avatars for guests/team */}
-                        <div className="h-7 w-7 rounded-full border-2 border-surface-1 bg-surface-2 flex items-center justify-center text-[10px] font-bold text-ink-soft">?</div>
+                        <img 
+                          src={`https://api.dicebear.com/9.x/notionists/png?seed=${encodeURIComponent(event.title)}`}
+                          alt="Team avatar"
+                          className="h-7 w-7 rounded-full border border-surface-1 bg-surface-2 object-cover"
+                        />
                       </div>
                     </div>
                   </div>

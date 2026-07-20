@@ -54,9 +54,11 @@ export function AccountMenu({
   }
 
   const avatar = (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-tr from-accent-strong to-accent-tint text-[14px] font-semibold text-white">
-      {initial}
-    </div>
+    <img
+      src={`https://api.dicebear.com/9.x/notionists/png?seed=${encodeURIComponent(label)}`}
+      alt={label}
+      className="h-10 w-10 shrink-0 rounded-full border-2 border-surface-0 bg-surface-2 object-cover"
+    />
   );
 
   return (
@@ -68,14 +70,14 @@ export function AccountMenu({
         className={
           compact
             ? "flex items-center rounded-full transition-opacity hover:opacity-80"
-            : "flex w-full items-center gap-3 rounded-xl border border-line/50 bg-surface-1 p-3 text-left transition-colors hover:bg-surface-2"
+            : "flex w-full items-center gap-3 rounded-xl p-3 text-left transition-colors hover:bg-surface-2"
         }
       >
         {avatar}
         {!compact && (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold text-ink">{label}</p>
-            <p className="truncate text-[12px] text-ink-soft">{email}</p>
+            <p className="truncate text-[15px] font-semibold text-ink">{label}</p>
+            <p className="truncate text-[13px] text-ink-soft">{email}</p>
           </div>
         )}
       </button>

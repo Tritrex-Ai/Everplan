@@ -80,7 +80,12 @@ export function InviteDialog({
   }
 
   async function remove(id: string) {
-    await supabase.from("members").delete().eq("id", id);
+    setError(null);
+    const { error: deleteError } = await supabase.from("members").delete().eq("id", id);
+    if (deleteError) {
+      setError("Couldn't remove that member — please try again.");
+      return;
+    }
     await loadMembers();
   }
 

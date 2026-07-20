@@ -40,6 +40,7 @@ export function ShotsPanel({
   const [draft, setDraft] = useState<ShotDraft | null>(null);
   const [detailShotId, setDetailShotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Owner data fetches include every shot (private + shared, any creator) so
   // realtime + "preview as" simulation both work off one full list — filter
@@ -89,46 +90,84 @@ export function ShotsPanel({
           }
         : { status: nextStatus, captured_by: null, captured_at: null };
 
+    setError(null);
     setShots((prev) =>
       prev.map((s) => (s.id === shot.id ? { ...s, ...patch } as ShotRow : s))
     );
-    await supabase.from("shots").update(patch).eq("id", shot.id);
+    const { error: updateError } = await supabase.from("shots").update(patch).eq("id", shot.id);
+    if (updateError) {
+      setShots((prev) => prev.map((s) => (s.id === shot.id ? shot : s)));
+      setError("Couldn't update that shot — please try again.");
+    }
   }
 
   async function setVisibility(shot: ShotRow, visibility: "private" | "shared") {
+    const previous = shot.visibility;
+    setError(null);
     setShots((prev) =>
       prev.map((s) => (s.id === shot.id ? { ...s, visibility } : s))
     );
-    await supabase.from("shots").update({ visibility }).eq("id", shot.id);
+    const { error: updateError } = await supabase
+      .from("shots")
+      .update({ visibility })
+      .eq("id", shot.id);
+    if (updateError) {
+      setShots((prev) =>
+        prev.map((s) => (s.id === shot.id ? { ...s, visibility: previous } : s))
+      );
+      setError("Couldn't update sharing for that shot — please try again.");
+    }
   }
 
   async function shareBlock(blockId: string, visibility: "private" | "shared") {
+    const previous = shots;
+    setError(null);
     setShots((prev) =>
       prev.map((s) => (s.block_id === blockId ? { ...s, visibility } : s))
     );
-    await supabase
+    const { error: updateError } = await supabase
       .from("shots")
       .update({ visibility })
       .eq("block_id", blockId)
       .eq("event_id", eventId);
+    if (updateError) {
+      setShots(previous);
+      setError("Couldn't update sharing for this block's shots — please try again.");
+    }
   }
 
   async function shareAll(visibility: "private" | "shared") {
+    const previous = shots;
+    setError(null);
     setShots((prev) => prev.map((s) => ({ ...s, visibility })));
-    await supabase.from("shots").update({ visibility }).eq("event_id", eventId);
+    const { error: updateError } = await supabase
+      .from("shots")
+      .update({ visibility })
+      .eq("event_id", eventId);
+    if (updateError) {
+      setShots(previous);
+      setError("Couldn't update sharing for all shots — please try again.");
+    }
   }
 
   async function deleteShot(id: string) {
+    const previous = shots;
+    setError(null);
     setShots((prev) => prev.filter((s) => s.id !== id));
-    await supabase.from("shots").delete().eq("id", id);
+    const { error: deleteError } = await supabase.from("shots").delete().eq("id", id);
+    if (deleteError) {
+      setShots(previous);
+      setError("Couldn't delete that shot — please try again.");
+    }
   }
 
   async function saveDraft(e: React.FormEvent) {
     e.preventDefault();
     if (!draft) return;
     setBusy(true);
+    setError(null);
 
-    const { data } = await supabase
+    const { data, error: saveError } = await supabase
       .from("shots")
       .insert({
         event_id: eventId,
@@ -141,7 +180,12 @@ export function ShotsPanel({
       .select("*")
       .single();
 
-    if (data) setShots((prev) => [...prev, data as ShotRow]);
+    if (saveError || !data) {
+      setError(saveError?.message ?? "Couldn't create this shot — please try again.");
+      setBusy(false);
+      return;
+    }
+    setShots((prev) => [...prev, data as ShotRow]);
     setBusy(false);
     setDraft(null);
   }
@@ -152,6 +196,11 @@ export function ShotsPanel({
 
   return (
     <section>
+      {error && (
+        <p className="mb-4 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+          {error}
+        </p>
+      )}
       {isOwner ? (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent-tint px-4 py-3">
           <p className="text-[13.5px] font-medium text-accent-ink">
@@ -351,6 +400,11 @@ export function ShotsPanel({
       <Modal open={draft !== null} onClose={() => setDraft(null)} title="Add shot">
         {draft && (
           <form onSubmit={saveDraft} className="space-y-3">
+            {error && (
+              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+                {error}
+              </p>
+            )}
             <Field label="Shot">
               <Input
                 required

@@ -36,7 +36,7 @@ export function DashboardSidebar({
               href={item.href}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[14.5px] font-medium transition-all ${
                 isActive
-                  ? "bg-accent text-white"
+                  ? "bg-accent-tint text-accent-strong"
                   : "text-ink-soft hover:bg-surface-2 hover:text-ink"
               }`}
             >
@@ -47,7 +47,7 @@ export function DashboardSidebar({
         })}
       </nav>
 
-      <div className="border-t border-line p-4">
+      <div className="p-4 pt-2">
         <AccountMenu fullName={fullName} email={email} />
       </div>
     </aside>

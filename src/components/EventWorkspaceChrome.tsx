@@ -10,6 +10,16 @@ import { GuestLinkDialog } from "@/components/GuestLinkDialog";
 import { AccountMenu } from "@/components/AccountMenu";
 import { Wordmark } from "@/components/Wordmark";
 import { Select } from "@/components/ui";
+import {
+  Calendar01Icon,
+  Camera01Icon,
+  Activity01Icon,
+  UserAdd01Icon,
+  Link01Icon,
+  Edit01Icon,
+  Delete02Icon,
+  Share01Icon,
+} from "hugeicons-react";
 import type { EventRow } from "@/lib/types";
 
 const TABS = [
@@ -17,6 +27,12 @@ const TABS = [
   { slug: "shots", label: "Shots" },
   { slug: "live", label: "Live" },
 ];
+
+const TAB_ICONS: Record<string, React.ElementType> = {
+  "": Calendar01Icon,
+  "shots": Camera01Icon,
+  "live": Activity01Icon,
+};
 
 const PREVIEW_LABELS: Record<string, string> = {
   team: "Team",
@@ -45,6 +61,7 @@ export function EventWorkspaceChrome({
   const searchParams = useSearchParams();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
   const [onlineCount, setOnlineCount] = useState(1);
 
@@ -96,7 +113,11 @@ export function EventWorkspaceChrome({
   async function deleteEvent() {
     if (!confirm(`Delete “${event.title}” and its whole timeline?`)) return;
     const supabase = createClient();
-    await supabase.from("events").delete().eq("id", event.id);
+    const { error } = await supabase.from("events").delete().eq("id", event.id);
+    if (error) {
+      alert("Couldn't delete this event — please try again.");
+      return;
+    }
     router.push("/events");
     router.refresh();
   }
@@ -115,7 +136,7 @@ export function EventWorkspaceChrome({
   ) : null;
 
   const actionsNavbar = isOwner && !previewAs ? (
-    <nav className="sticky top-0 z-40 flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
+    <nav className="sticky top-0 z-40 hidden lg:flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
       <div className="flex items-center gap-2 flex-1">
         {onlineCount > 1 && (
           <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-ok-tint px-2.5 py-1 text-[12px] font-medium text-ok">
@@ -127,26 +148,30 @@ export function EventWorkspaceChrome({
       {previewControl}
       <button
         onClick={() => setInviteOpen(true)}
-        className="shrink-0 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-sm"
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-[0_2px_10px_rgba(110,40,210,0.2)] transition-all"
       >
+        <UserAdd01Icon size={16} />
         Invite team
       </button>
       <button
         onClick={() => setGuestLinkOpen(true)}
-        className="shrink-0 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
       >
+        <Link01Icon size={16} className="text-ink-soft" />
         Guest link{guestToken ? " (On)" : ""}
       </button>
       <Link
         href={`${base}/edit`}
-        className="shrink-0 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
       >
+        <Edit01Icon size={16} className="text-ink-soft" />
         Edit event
       </Link>
       <button
         onClick={deleteEvent}
-        className="shrink-0 rounded-lg bg-danger-tint px-4 py-2 text-[13px] font-medium text-danger hover:bg-danger hover:text-white transition-colors"
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-danger-tint px-4 py-2 text-[13px] font-medium text-danger hover:bg-danger hover:text-white transition-colors"
       >
+        <Delete02Icon size={16} />
         Delete
       </button>
     </nav>
@@ -175,7 +200,7 @@ export function EventWorkspaceChrome({
         </Link>
         <div className="mb-6 flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="truncate font-serif text-[19px] italic leading-tight">
+            <h1 className="truncate font-sans text-[13px] font-bold tracking-widest uppercase text-ink mt-1">
               {event.title}
             </h1>
             <p className="mt-0.5 text-[13px] text-ink-soft">
@@ -188,12 +213,16 @@ export function EventWorkspaceChrome({
             <Link
               key={tab.slug}
               href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
-              className={`rounded-md px-3 py-2 text-[14px] font-medium transition-colors ${
+              className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[14px] font-medium transition-colors ${
                 active === tab.slug
                   ? "bg-accent-tint text-accent-ink"
                   : "text-ink-soft hover:bg-surface-2 hover:text-ink"
               }`}
             >
+              {(() => {
+                const Icon = TAB_ICONS[tab.slug];
+                return Icon ? <Icon size={18} className={active === tab.slug ? "text-accent" : "text-ink-faint"} /> : null;
+              })()}
               {tab.label}
             </Link>
           ))}
@@ -210,7 +239,7 @@ export function EventWorkspaceChrome({
             <Link href="/events" className="text-[13.5px] text-ink-soft hover:text-ink">
               ← My events
             </Link>
-            <h1 className="mt-1 truncate font-serif text-[22px] italic leading-tight">
+            <h1 className="mt-2 truncate font-sans text-[13px] font-bold tracking-widest uppercase text-ink">
               {event.title}
             </h1>
             <p className="mt-0.5 text-[13.5px] text-ink-soft">
@@ -222,7 +251,16 @@ export function EventWorkspaceChrome({
         </div>
 
         {isOwner && (
-          <div className="mt-3 flex justify-end">{previewControl}</div>
+          <div className="mt-3 flex items-center justify-end gap-2">
+            {previewControl}
+            <button 
+              onClick={() => setOptionsOpen(true)} 
+              className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-2 text-ink hover:bg-surface-3 transition-colors"
+              aria-label="Event options"
+            >
+              <Share01Icon size={16} />
+            </button>
+          </div>
         )}
 
         <nav className="mt-4 flex gap-1 rounded-lg bg-surface-2 p-1">
@@ -262,6 +300,47 @@ export function EventWorkspaceChrome({
         onClose={() => setGuestLinkOpen(false)}
         onTokenChange={setGuestToken}
       />
+      {/* Mobile Options Bottom Sheet */}
+      {optionsOpen && isOwner && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-ink/40 lg:hidden" onClick={() => setOptionsOpen(false)}>
+          <div 
+            className="w-full rounded-t-[24px] bg-surface-1 p-5 pb-8 shadow-xl animate-in slide-in-from-bottom duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="text-[17px] font-semibold text-ink">Event Options</h3>
+              <button onClick={() => setOptionsOpen(false)} className="text-[14px] font-medium text-ink-soft hover:text-ink">Cancel</button>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => { setOptionsOpen(false); setInviteOpen(true); }}
+                className="flex w-full items-center gap-3 rounded-xl bg-accent px-4 py-3.5 text-[15px] font-semibold text-white hover:bg-accent-strong"
+              >
+                <UserAdd01Icon size={20} /> Invite team
+              </button>
+              <button
+                onClick={() => { setOptionsOpen(false); setGuestLinkOpen(true); }}
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+              >
+                <Link01Icon size={20} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
+              </button>
+              <Link
+                href={`${base}/edit`}
+                onClick={() => setOptionsOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+              >
+                <Edit01Icon size={20} className="text-ink-soft" /> Edit event
+              </Link>
+              <button
+                onClick={() => { setOptionsOpen(false); deleteEvent(); }}
+                className="flex w-full items-center gap-3 rounded-xl bg-danger-tint px-4 py-3.5 text-[15px] font-medium text-danger hover:bg-danger hover:text-white"
+              >
+                <Delete02Icon size={20} /> Delete event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

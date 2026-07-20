@@ -143,9 +143,19 @@ export function LiveBoard({
     }
   }, [board.next, now]);
 
+  const [actionError, setActionError] = useState<string | null>(null);
+
   async function setBlockStatus(block: BlockRow, status: BlockRow["status"]) {
+    const previousStatus = block.status;
+    setActionError(null);
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, status } : b)));
-    await supabase.from("blocks").update({ status }).eq("id", block.id);
+    const { error } = await supabase.from("blocks").update({ status }).eq("id", block.id);
+    if (error) {
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === block.id ? { ...b, status: previousStatus } : b))
+      );
+      setActionError("Couldn't update that block — please try again.");
+    }
   }
 
   async function toggleShot(shot: ShotRow) {
@@ -153,10 +163,15 @@ export function LiveBoard({
     const patch = captured
       ? { status: "captured", captured_by: userId, captured_at: new Date().toISOString() }
       : { status: "planned", captured_by: null, captured_at: null };
+    setActionError(null);
     setShots((prev) =>
       prev.map((s) => (s.id === shot.id ? ({ ...s, ...patch } as ShotRow) : s))
     );
-    await supabase.from("shots").update(patch).eq("id", shot.id);
+    const { error } = await supabase.from("shots").update(patch).eq("id", shot.id);
+    if (error) {
+      setShots((prev) => (prev.map((s) => (s.id === shot.id ? shot : s))));
+      setActionError("Couldn't update that shot — please try again.");
+    }
   }
 
   return (
@@ -187,6 +202,12 @@ export function LiveBoard({
             {live ? "Live" : "Connecting"}
           </span>
         </header>
+
+        {actionError && (
+          <p className="mb-4 rounded-md bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
+            {actionError}
+          </p>
+        )}
 
         {blocks.length === 0 ? (
           <p className="rounded-lg bg-night-1 px-5 py-10 text-center text-[14px] text-night-ink-soft">

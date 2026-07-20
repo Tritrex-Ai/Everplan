@@ -75,16 +75,35 @@ export function GenerateClient({
       position: i,
     }));
 
-    if (hasBlocks) {
-      // Replace the existing timeline — the AI draft becomes the new plan.
-      await supabase.from("blocks").delete().eq("event_id", event.id);
-    }
+    // Capture the old block ids before touching anything, so the delete
+    // below can target exactly those rows — not the ones we're about to
+    // insert, which get their own fresh ids either way.
+    const { data: oldBlocks } = hasBlocks
+      ? await supabase.from("blocks").select("id").eq("event_id", event.id)
+      : { data: [] as { id: string }[] };
 
-    const { error } = await supabase.from("blocks").insert(rows);
-    if (error) {
-      setError(error.message);
+    // Insert the new draft before removing the old timeline — if this
+    // fails, the existing blocks are untouched instead of already gone.
+    const { error: insertError } = await supabase.from("blocks").insert(rows);
+    if (insertError) {
+      setError(insertError.message);
       setSaving(false);
       return;
+    }
+
+    if (oldBlocks && oldBlocks.length > 0) {
+      // Replace the existing timeline — the AI draft becomes the new plan.
+      const { error: deleteError } = await supabase
+        .from("blocks")
+        .delete()
+        .in("id", oldBlocks.map((b) => b.id));
+      if (deleteError) {
+        setError(
+          "Saved the new plan, but couldn't clear the old one — you may see duplicate blocks. Please refresh and remove them by hand."
+        );
+        setSaving(false);
+        return;
+      }
     }
 
     router.push(`/events/${event.id}`);

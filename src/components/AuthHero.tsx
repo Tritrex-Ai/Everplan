@@ -62,8 +62,8 @@ export function AuthHero() {
       ))}
 
       {/* warm scrim for legibility, not a moody blackout */}
-      <div className="absolute inset-0 bg-gradient-to-t from-night-0/85 via-night-0/10 to-night-0/25" />
-      <div className="absolute inset-0 bg-gradient-to-r from-night-0/25 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-night-0/95 via-night-0/20 to-night-0/40" />
+      <div className="absolute inset-0 bg-gradient-to-r from-night-0/40 via-night-0/5 to-transparent" />
 
       <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
         <Wordmark size="lg" tone="light" />

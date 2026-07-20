@@ -35,6 +35,7 @@ export function OnboardingFlow({ userId }: { userId: string }) {
   const [role, setRole] = useState<Profession | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Hard-navigate once the profile update settles, mirroring the
   // login page's post-auth navigation (a fresh request so /events re-reads
@@ -45,7 +46,8 @@ export function OnboardingFlow({ userId }: { userId: string }) {
 
   async function finish(profession: Profession, teamSize: "solo" | "team" | null) {
     setBusy(true);
-    await supabase
+    setError(null);
+    const { error: updateError } = await supabase
       .from("profiles")
       .update({
         professions: [profession],
@@ -53,6 +55,11 @@ export function OnboardingFlow({ userId }: { userId: string }) {
         onboarding_completed: true,
       })
       .eq("id", userId);
+    if (updateError) {
+      setError("Couldn't save that — please try again.");
+      setBusy(false);
+      return;
+    }
     setDone(true);
   }
 
@@ -68,6 +75,12 @@ export function OnboardingFlow({ userId }: { userId: string }) {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-5 py-10">
       <Wordmark className="mb-8" />
+
+      {error && (
+        <p className="mb-4 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+          {error}
+        </p>
+      )}
 
       {step === "role" ? (
         <>

@@ -1,7 +1,8 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
-import { Cancel01Icon } from "hugeicons-react";
+import { type ReactNode, useEffect, useState } from "react";
+import { Cancel01Icon, EyeIcon, ViewOffIcon } from "hugeicons-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* Flat component kit: tonal surfaces, no shadows, hairlines only when a tone
    shift can't do the job. One accent. */
@@ -44,9 +45,50 @@ export function Input({
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={`h-11 w-full rounded-md bg-surface-2 px-3.5 text-[15px] text-ink placeholder:text-ink-faint focus:bg-surface-1 focus:outline-2 focus:outline-accent transition-colors ${className}`}
+      className={`h-11 w-full rounded-md bg-gradient-to-b from-surface-2 to-surface-1 px-3.5 text-[15px] text-ink shadow-inner placeholder:text-ink-faint focus:bg-surface-1 focus:outline-2 focus:outline-accent transition-all ${className}`}
       {...props}
     />
+  );
+}
+
+export function PasswordInput({
+  className = "",
+  onDrag,
+  onDragStart,
+  onDragEnd,
+  onAnimationStart,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <motion.input
+        type={show ? "text" : "password"}
+        initial={false}
+        animate={{ filter: show ? ["blur(4px)", "blur(0px)"] : ["blur(4px)", "blur(0px)"] }}
+        transition={{ duration: 0.2 }}
+        className={`h-11 w-full rounded-md bg-gradient-to-b from-surface-2 to-surface-1 px-3.5 pr-12 text-[15px] text-ink shadow-inner placeholder:text-ink-faint focus:bg-surface-1 focus:outline-2 focus:outline-accent transition-all ${className}`}
+        {...props}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-ink-faint hover:text-ink transition-colors"
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={show ? "hide" : "show"}
+            initial={{ opacity: 0, scale: 0.8, rotate: -45 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.8, rotate: 45 }}
+            transition={{ duration: 0.15 }}
+          >
+            {show ? <ViewOffIcon size={18} /> : <EyeIcon size={18} />}
+          </motion.div>
+        </AnimatePresence>
+      </button>
+    </div>
   );
 }
 
