@@ -81,7 +81,7 @@ export function LandingPage() {
       <IntroLoader visible={loading} />
       <Header />
       <main id="top">
-        <Hero introDone={!loading} />
+        <Hero />
         <Features />
         <HowItWorks />
         <Audience />
@@ -188,7 +188,7 @@ function StaggerLine({ text, className = "", startDelay = 0 }: { text: string; c
   );
 }
 
-function Hero({ introDone }: { introDone: boolean }) {
+function Hero() {
   const reduce = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
@@ -204,17 +204,13 @@ function Hero({ introDone }: { introDone: boolean }) {
             Live event-day timelines
           </p>
           <h1 className="mb-5 text-[38px] font-semibold leading-[1.06] tracking-[-0.028em] sm:text-[52px] lg:text-[58px]">
-            {introDone && (
-              <>
-                <StaggerLine text="The wedding day always slips." />
-                <br />
-                <StaggerLine
-                  text="Yours won't feel like it."
-                  className="font-serif font-medium italic"
-                  startDelay={0.35}
-                />
-              </>
-            )}
+            <StaggerLine text="The wedding day always slips." />
+            <br />
+            <StaggerLine
+              text="Yours won't feel like it."
+              className="font-serif font-medium italic"
+              startDelay={0.35}
+            />
           </h1>
           <Reveal variants={reduce ? fadeUp : fadeUp} delay={0.15}>
             <p className="mb-7 max-w-[52ch] text-[18px] text-ink-soft">
