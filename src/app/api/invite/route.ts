@@ -50,7 +50,11 @@ export async function POST(request: Request) {
     );
   }
 
-  // Send Email via Resend
+  // Send Email via Resend. The member row above is the real invite — it's
+  // already active the moment the invitee signs up with this email,
+  // regardless of whether this notification email lands. So a failure here
+  // is reported back, not treated as the request failing.
+  let emailSent = false;
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const roleName = role === "team" ? "Team member" : role === "client" ? "Client" : "Vendor";
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
     const joinUrl = `${new URL(request.url).origin}/login`;
 
     try {
-      await resend.emails.send({
+      const { error: sendError } = await resend.emails.send({
         from: "Everplan <onboarding@resend.dev>",
         to: email,
         subject: `You've been invited to ${eventTitle} on Everplan`,
@@ -92,10 +96,15 @@ export async function POST(request: Request) {
           </div>
         `,
       });
+      if (sendError) {
+        console.error("Failed to send invite email", sendError);
+      } else {
+        emailSent = true;
+      }
     } catch (e) {
-      console.error("Failed to send email", e);
+      console.error("Failed to send invite email", e);
     }
   }
 
-  return NextResponse.json({ success: true, member });
+  return NextResponse.json({ success: true, member, emailSent });
 }

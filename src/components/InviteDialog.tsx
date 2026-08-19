@@ -31,6 +31,7 @@ export function InviteDialog({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MemberRole>("team");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const loadMembers = useCallback(async () => {
@@ -56,6 +57,7 @@ export function InviteDialog({
     e.preventDefault();
     setBusy(true);
     setError(null);
+    setNotice(null);
 
     const res = await fetch("/api/invite", {
       method: "POST",
@@ -74,6 +76,11 @@ export function InviteDialog({
       setError(json.error || "Failed to invite member.");
     } else {
       setEmail("");
+      if (json.emailSent === false) {
+        setNotice(
+          "Added — but the notification email didn't send. Let them know directly, or they can just sign up with this exact email to get access."
+        );
+      }
       await loadMembers();
     }
     setBusy(false);
@@ -117,6 +124,11 @@ export function InviteDialog({
         {error && (
           <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
             {error}
+          </p>
+        )}
+        {notice && (
+          <p className="rounded-md bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
+            {notice}
           </p>
         )}
         <Button type="submit" disabled={busy} className="w-full">
