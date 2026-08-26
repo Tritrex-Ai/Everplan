@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedDate } from "@/components/FormattedTime";
 import { InviteDialog } from "@/components/InviteDialog";
@@ -19,6 +19,7 @@ import {
   Edit01Icon,
   Delete02Icon,
   Share01Icon,
+  MoreHorizontalIcon,
 } from "hugeicons-react";
 import type { EventRow } from "@/lib/types";
 
@@ -62,8 +63,29 @@ export function EventWorkspaceChrome({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
   const [onlineCount, setOnlineCount] = useState(1);
+  const moreRef = useRef<HTMLDivElement>(null);
+
+  // Same click-outside/Escape pattern as AccountMenu's dropdown.
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onPointerDown(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMoreOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
 
   // Owner-only "master view": simulate how Team or Read-only would render
   // this workspace without actually switching accounts. The underlying data
@@ -136,7 +158,7 @@ export function EventWorkspaceChrome({
   ) : null;
 
   const actionsNavbar = isOwner && !previewAs ? (
-    <nav className="sticky top-0 z-40 hidden lg:flex items-center gap-2 overflow-x-auto border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10 scrollbar-hide">
+    <nav className="sticky top-0 z-40 hidden lg:flex items-center gap-2 border-b border-line bg-surface-0/80 px-5 py-3 backdrop-blur-md lg:px-10">
       <div className="flex items-center gap-2 flex-1">
         {onlineCount > 1 && (
           <span className="shrink-0 flex items-center gap-1.5 rounded-full bg-ok-tint px-2.5 py-1 text-[12px] font-medium text-ok">
@@ -148,32 +170,45 @@ export function EventWorkspaceChrome({
       {previewControl}
       <button
         onClick={() => setInviteOpen(true)}
-        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong shadow-[0_2px_10px_rgba(110,40,210,0.2)] transition-all"
+        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong transition-colors"
       >
         <UserAdd01Icon size={16} />
         Invite team
       </button>
-      <button
-        onClick={() => setGuestLinkOpen(true)}
-        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
-      >
-        <Link01Icon size={16} className="text-ink-soft" />
-        Guest link{guestToken ? " (On)" : ""}
-      </button>
-      <Link
-        href={`${base}/edit`}
-        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-surface-2 px-4 py-2 text-[13px] font-medium text-ink hover:bg-surface-3 transition-colors"
-      >
-        <Edit01Icon size={16} className="text-ink-soft" />
-        Edit event
-      </Link>
-      <button
-        onClick={deleteEvent}
-        className="shrink-0 flex items-center gap-1.5 rounded-lg bg-danger-tint px-4 py-2 text-[13px] font-medium text-danger hover:bg-danger hover:text-white transition-colors"
-      >
-        <Delete02Icon size={16} />
-        Delete
-      </button>
+      <div ref={moreRef} className="relative shrink-0">
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-label="Event options"
+          aria-expanded={moreOpen}
+          className="flex h-8.5 w-8.5 items-center justify-center rounded-lg bg-surface-2 text-ink-soft hover:bg-surface-3 hover:text-ink transition-colors"
+        >
+          <MoreHorizontalIcon size={18} />
+        </button>
+        {moreOpen && (
+          <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl bg-surface-1 p-1.5 outline outline-1 outline-line/60">
+            <button
+              onClick={() => { setMoreOpen(false); setGuestLinkOpen(true); }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
+            >
+              <Link01Icon size={17} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
+            </button>
+            <Link
+              href={`${base}/edit`}
+              onClick={() => setMoreOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
+            >
+              <Edit01Icon size={17} className="text-ink-soft" /> Edit event
+            </Link>
+            <div className="my-1 h-px bg-line/60" />
+            <button
+              onClick={() => { setMoreOpen(false); deleteEvent(); }}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-danger hover:bg-danger hover:text-white"
+            >
+              <Delete02Icon size={17} /> Delete event
+            </button>
+          </div>
+        )}
+      </div>
     </nav>
   ) : null;
 

@@ -287,6 +287,7 @@ export function TimelineEditor({
         />
       ) : (
         <DndContext
+          id={`timeline-dnd-${event.id}`}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={onDragEnd}
@@ -295,14 +296,25 @@ export function TimelineEditor({
             items={blocks.map((b) => b.id)}
             strategy={verticalListSortingStrategy}
           >
-            <motion.ul 
-              className="space-y-2"
+            <motion.ul
+              className="relative space-y-2"
               initial="hidden"
               animate="show"
               variants={{
                 show: { transition: { staggerChildren: 0.05 } }
               }}
             >
+              {/* The thread connecting each drag handle, turning a stack of
+                  cards into a visible timeline. Sits above the opaque cards
+                  (z-index higher than each li's) so it actually reads as
+                  passing behind each handle icon rather than being fully
+                  hidden by the card backgrounds — only where handles exist. */}
+              {isOwner && blocks.length > 1 && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-[18px] top-6 bottom-6 z-[2] w-px bg-line"
+                />
+              )}
               <AnimatePresence mode="popLayout">
                 {blocks.map((block) => (
                   <SortableBlock
@@ -425,9 +437,9 @@ function SortableBlock({
         show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
       }}
       layout="position"
-      whileHover={isDragging ? {} : { scale: 1.01, boxShadow: "0 8px 30px rgba(0,0,0,0.04)" }}
-      whileDrag={{ scale: 1.03, boxShadow: "0 20px 40px rgba(0,0,0,0.08)" }}
-      className={`group flex items-stretch rounded-lg bg-surface-1 shadow-sm ring-1 ring-line/50 transition-colors ${
+      whileHover={isDragging ? {} : { scale: 1.01 }}
+      whileDrag={{ scale: 1.03 }}
+      className={`group relative z-[1] flex items-stretch rounded-lg bg-surface-1 ring-1 ring-line/50 transition-colors ${
         isDragging ? "z-10 bg-surface-0 ring-accent" : ""
       }`}
     >
@@ -443,34 +455,32 @@ function SortableBlock({
       )}
       <button
         onClick={canEdit ? onEdit : undefined}
-        className={`flex min-w-0 flex-1 items-center justify-between gap-4 py-3 pr-4 text-left ${
+        className={`flex min-w-0 flex-1 items-center gap-3 py-2.5 pr-3 text-left ${
           canEdit ? "" : "pl-4"
         }`}
       >
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-surface-2 text-ink-soft group-hover:bg-accent-tint group-hover:text-accent transition-colors">
-            <BlockIcon title={block.title} className="group-hover:drop-shadow-[0_0_8px_rgba(110,40,210,0.4)] transition-all" />
+        <div className="shrink-0 flex items-center justify-center h-9 w-9 rounded-full bg-surface-2 text-ink-soft group-hover:bg-accent-tint group-hover:text-accent transition-colors">
+          <BlockIcon title={block.title} className="transition-colors" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="shrink-0 font-mono text-[13px] font-medium text-accent-ink">
+              <FormattedTime iso={block.start_time} />
+            </span>
+            <span className="truncate text-[15px] font-semibold">{block.title}</span>
           </div>
-          <div className="min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="shrink-0 font-mono text-[13px] font-medium text-accent-ink">
-                <FormattedTime iso={block.start_time} />
-              </span>
-              <span className="truncate text-[15px] font-semibold">{block.title}</span>
-            </div>
           {(block.location || block.notes) && (
             <p className="mt-0.5 truncate text-[13px] text-ink-soft">
               {[block.location, block.notes].filter(Boolean).join(" · ")}
             </p>
           )}
-          </div>
         </div>
-        <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-0.5 text-[12px] font-medium text-ink-soft">
+      </button>
+      <div className="flex shrink-0 items-center gap-1.5 pr-3">
+        <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[12px] font-medium text-ink-soft">
           {durationLabel(block.start_time, block.end_time)}
         </span>
-      </button>
-      {canEdit && (
-        <div className="flex items-center pr-3">
+        {canEdit && (
           <button
             onClick={onToggleGuestVisible}
             aria-label={block.guest_visible ? "Hide from guests" : "Show to guests"}
@@ -479,16 +489,16 @@ function SortableBlock({
                 ? "Visible to guests — click to hide"
                 : "Hidden from guests — click to show"
             }
-            className={`flex shrink-0 items-center justify-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+            className={`flex shrink-0 items-center justify-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
               block.guest_visible
-                ? "bg-ok-tint text-ok-ink ring-1 ring-ok-tint/50 shadow-sm hover:bg-ok-tint/80"
+                ? "bg-ok-tint text-ok-ink hover:bg-ok-tint/80"
                 : "bg-surface-2 text-ink-faint hover:bg-surface-3"
             }`}
           >
             {block.guest_visible ? "Visible" : "Hidden"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </motion.li>
   );
 }
