@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
@@ -41,6 +41,38 @@ export function ShotsPanel({
   const [detailShotId, setDetailShotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // No realtime here meant a teammate checking a shot off, or the owner
+  // sharing/unsharing one, never reached anyone else's Shots tab without a
+  // refresh — same gap as the Timeline tab. RLS already scopes which rows a
+  // given viewer's subscription receives (private shots stay private over
+  // this channel too), so this only ever merges in rows this viewer could
+  // already legitimately fetch.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`shots-${eventId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shots", filter: `event_id=eq.${eventId}` },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const row = payload.new as ShotRow;
+            setShots((prev) => (prev.some((s) => s.id === row.id) ? prev : [...prev, row]));
+          } else if (payload.eventType === "UPDATE") {
+            const row = payload.new as ShotRow;
+            setShots((prev) => prev.map((s) => (s.id === row.id ? row : s)));
+          } else if (payload.eventType === "DELETE") {
+            const oldRow = payload.old as { id: string };
+            setShots((prev) => prev.filter((s) => s.id !== oldRow.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, eventId]);
 
   // Owner data fetches include every shot (private + shared, any creator) so
   // realtime + "preview as" simulation both work off one full list — filter

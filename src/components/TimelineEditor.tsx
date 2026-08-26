@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -91,6 +91,43 @@ export function TimelineEditor({
   const [draft, setDraft] = useState<BlockDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Unlike LiveBoard/GuestLiveBoard, this tab had no realtime subscription
+  // at all — one owner reordering or editing blocks never reached anyone
+  // else's Timeline tab until they refreshed. Position isn't just a field
+  // on the changed row here, it's the array's own order, so every branch
+  // re-sorts by position after merging the change in.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`timeline-${event.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "blocks", filter: `event_id=eq.${event.id}` },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const row = payload.new as BlockRow;
+            setBlocks((prev) =>
+              prev.some((b) => b.id === row.id)
+                ? prev
+                : [...prev, row].sort((a, b) => a.position - b.position)
+            );
+          } else if (payload.eventType === "UPDATE") {
+            const row = payload.new as BlockRow;
+            setBlocks((prev) =>
+              prev.map((b) => (b.id === row.id ? row : b)).sort((a, b) => a.position - b.position)
+            );
+          } else if (payload.eventType === "DELETE") {
+            const oldRow = payload.old as { id: string };
+            setBlocks((prev) => prev.filter((b) => b.id !== oldRow.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, event.id]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
