@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
     try {
       const { error: sendError } = await resend.emails.send({
-        from: "Everplan <onboarding@resend.dev>",
+        from: "Everplan <invites@tritrexai.com>",
         to: email,
         subject: `You've been invited to ${eventTitle} on Everplan`,
         html: `
