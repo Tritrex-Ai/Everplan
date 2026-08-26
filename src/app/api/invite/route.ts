@@ -73,7 +73,16 @@ export async function POST(request: Request) {
       .single();
     const inviterName = profile?.full_name ?? "Someone";
 
-    const joinUrl = `${new URL(request.url).origin}/login`;
+    // request.url reflects whatever domain the request actually hit — a
+    // per-deployment preview URL, localhost, or a stale deployment alias if
+    // an invite was ever triggered from one. VERCEL_PROJECT_PRODUCTION_URL
+    // is Vercel's own stable production domain for this project, set
+    // automatically at runtime, so the link in the email stays correct
+    // regardless of where the request that sent it came from.
+    const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : new URL(request.url).origin;
+    const joinUrl = `${siteUrl}/login`;
 
     try {
       const { error: sendError } = await resend.emails.send({
