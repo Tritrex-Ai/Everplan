@@ -304,17 +304,6 @@ export function TimelineEditor({
                 show: { transition: { staggerChildren: 0.05 } }
               }}
             >
-              {/* The thread connecting each drag handle, turning a stack of
-                  cards into a visible timeline. Sits above the opaque cards
-                  (z-index higher than each li's) so it actually reads as
-                  passing behind each handle icon rather than being fully
-                  hidden by the card backgrounds — only where handles exist. */}
-              {isOwner && blocks.length > 1 && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-[18px] top-6 bottom-6 z-[2] w-px bg-line"
-                />
-              )}
               <AnimatePresence mode="popLayout">
                 {blocks.map((block) => (
                   <SortableBlock
