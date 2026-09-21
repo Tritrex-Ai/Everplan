@@ -34,6 +34,33 @@ Wedding/event software gets compared to Everplan a lot, but most of it isn't act
 
 **None of them advertise true live, multi-device sync during the event.** TimelinePro's "shareable links" and activity alerts are adjacent but not the same as a Now/Next/Later board updating on every phone within seconds. None of them have real, database-enforced role tiers (Team writes, Client/Vendor read-only) or a public no-login guest QR view. **That's Everplan's actual open lane.**
 
+## Feature-by-feature: what Coordon has that Everplan doesn't
+
+The actual audit — every feature from the Coordon walkthrough, whether Everplan has an equivalent, and a verdict.
+
+| Coordon feature | Does Everplan have it? | Verdict | Why |
+|---|---|---|---|
+| Role-based onboarding ("What brings you to Coordon?") | Yes — mandatory "Who are you?" wizard | Already have | — |
+| 5-step guided event creation wizard | No — single-page form | **Don't add** | More steps than what Everplan already does. Copying it would be a regression, not an upgrade. |
+| Countdown "flip clock" widget | No | **Skip for now** | Needs a new "Overview" screen Everplan doesn't have; low value against that structural cost. |
+| Mini calendar month view | No | **Skip** | Everplan's whole point is Now/Next/Later, not a generic calendar. Would blur the focus. |
+| Budget tracking | No | **Skip** | Layer 2 (planning-suite) territory — different buyer, different job. |
+| Full Contacts/CRM (call/message/email, phone import, Vendors/Team filters) | No — has team invites/roles instead | **Skip** | Everplan's roles answer "who can see what." A rolodex answers "how do I reach this vendor" — not Everplan's job. |
+| Files & Documents (generic file drawer) | Partial — shots already support reference images | **Skip the generic version** | The narrow, purpose-built version (photos on a shot) already covers the real photographer use case. |
+| Shared Links | Yes, more purpose-built — Guest link + role-based invites | Already have | Everplan's version is narrower and does more (real permission enforcement, not just a link). |
+| Notes & Details (separate section) | Yes — folded into each block's own notes field | Already have | Simpler than a parallel section. |
+| RSVP system | No | **Skip** | Guest-list ownership belongs to the couple/planner, not the photographer. |
+| Tasks as a separate tab | No — shots serve this role | **Skip** | Already covered; a second to-do system would be redundant. |
+| Save to Calendar (native device export) | No | **Low-priority maybe** | Cheap, no new feature surface, genuine minor utility. |
+| Export Event Data as PDF | No | **Low-priority maybe** | Same reasoning — cheap, self-contained, not urgent. |
+| AI Timeline Assistant (upload a PDF/image, chat to build) | Partial — Everplan's AI builder takes plain-language text only | **Worth enhancing** | Not a new feature — extending the existing AI builder to accept an uploaded PDF/image. Photographers often get a timeline PDF straight from the coordinator and currently have to retype it. Real, common friction. |
+| Reusable timeline/task templates | No | **Worth considering** | Speeds up the core job (building timelines) without adding new feature surface. |
+| Floating bottom pill tab bar | No — sidebar/top nav | **Skip** | Cosmetic nav overhaul; high effort relative to value. |
+| Richer empty states (multiple concrete next actions) | Partial — one CTA today | **Add** | Zero new feature surface, makes existing functionality (AI builder + manual add) more discoverable. |
+| Auto-generated shot lists from client questionnaire *(ShotLace, not Coordon)* | No | **Add** | The headline recommendation from this research — sharpens the existing niche instead of expanding it. |
+
+**Net read:** most of what Coordon has and Everplan doesn't is correctly out of scope — it belongs to a different job entirely. The genuine adds are narrow: better empty states, auto-generated shot lists, PDF/image input for the AI builder, and maybe reusable templates. Everything else on this list is either already covered in a more focused form, or purpose-built for a buyer Everplan isn't chasing.
+
 ## What Everplan explicitly is not, and shouldn't become
 
 - **Not a CRM.** No leads, contracts, invoicing, payments. That's HoneyBook/Táve/Dubsado's job.
