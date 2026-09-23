@@ -51,15 +51,15 @@ The actual audit — every feature from the Coordon walkthrough, whether Everpla
 | Notes & Details (separate section) | Yes — folded into each block's own notes field | Already have | Simpler than a parallel section. |
 | RSVP system | No | **Skip** | Guest-list ownership belongs to the couple/planner, not the photographer. |
 | Tasks as a separate tab | No — shots serve this role | **Skip** | Already covered; a second to-do system would be redundant. |
-| Save to Calendar (native device export) | No | **Low-priority maybe** | Cheap, no new feature surface, genuine minor utility. |
-| Export Event Data as PDF | No | **Low-priority maybe** | Same reasoning — cheap, self-contained, not urgent. |
+| Save to Calendar (native device export) | Yes — "Add to calendar" exports an .ics file | Done | Every block becomes a calendar event (title, time, location, notes) — importable into Apple/Google/Outlook. |
+| Export Event Data as PDF | Yes — "Export as PDF" opens a print-ready page | Done | A clean, chrome-free timeline + shot list, exported via the browser's own print-to-PDF rather than a new rendering dependency. |
 | AI Timeline Assistant (upload a PDF/image, chat to build) | Yes — the AI builder now also accepts an uploaded PDF or photo | Done | Extended the existing AI builder rather than adding a new one. Photographers often get a timeline PDF straight from the coordinator and no longer have to retype it. |
-| Reusable timeline/task templates | No | **Worth considering** | Speeds up the core job (building timelines) without adding new feature surface. |
+| Reusable timeline/task templates | Yes — "Save as template" / "Use a template" on the Timeline tab | Done | Saves the current timeline's blocks (titles, relative times, locations, notes) as a reusable, event-date-independent template; applying one to another event reuses the same HH:MM-to-date conversion the AI builder already does. |
 | Floating bottom pill tab bar | No — sidebar/top nav | **Skip** | Cosmetic nav overhaul; high effort relative to value. |
 | Richer empty states (multiple concrete next actions) | Yes — the Timeline empty state already surfaces "+ Add block" and "AI Timeline Builder" side by side | Already have | This line was stale when first written — the two-CTA layout predates this audit. No work needed. |
 | Auto-generated shot lists from client questionnaire *(ShotLace, not Coordon)* | Yes — "Generate list" per block on the Shots tab | Done | Was the headline recommendation from this research. Describe who needs group/family shots in plain language and Claude drafts an ordered, peel-away-style list against that block, editable before saving. |
 
-**Net read:** most of what Coordon has and Everplan doesn't is correctly out of scope — it belongs to a different job entirely. Of the genuine adds identified here, the two real ones are shipped: the AI timeline builder reads an attached PDF/photo, and shot lists can now be auto-generated per block from a plain-language description of who needs group/family photos. What's left is low-priority (save-to-calendar, PDF export) or optional (reusable templates) — nothing left that's actually blocking the product.
+**Net read:** most of what Coordon has and Everplan doesn't is correctly out of scope — it belongs to a different job entirely. Every genuine add identified in this audit is now shipped: the AI timeline builder reads an attached PDF/photo, shot lists auto-generate per block from a plain-language description, timelines export to a device calendar and to a printable PDF, and a timeline's blocks can be saved and reused as a template across events. Nothing actionable is left outstanding from this research.
 
 ## What Everplan explicitly is not, and shouldn't become
 

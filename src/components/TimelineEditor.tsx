@@ -33,8 +33,13 @@ import {
   Activity01Icon,
   Home01Icon,
   SquareIcon,
+  BookmarkAdd01Icon,
+  Copy01Icon,
+  Delete02Icon,
 } from "hugeicons-react";
-import type { BlockRow, EventRow } from "@/lib/types";
+import type { BlockRow, EventRow, TemplateRow, TemplateBlockRow } from "@/lib/types";
+
+type TemplateWithCount = TemplateRow & { blockCount: number };
 
 type BlockDraft = {
   id?: string;
@@ -91,6 +96,13 @@ export function TimelineEditor({
   const [draft, setDraft] = useState<BlockDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [applyTemplateOpen, setApplyTemplateOpen] = useState(false);
+  const [templates, setTemplates] = useState<TemplateWithCount[] | null>(null);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [applyingTemplateId, setApplyingTemplateId] = useState<string | null>(null);
 
   // Unlike LiveBoard/GuestLiveBoard, this tab had no realtime subscription
   // at all — one owner reordering or editing blocks never reached anyone
@@ -255,6 +267,149 @@ export function TimelineEditor({
     }
   }
 
+  async function saveAsTemplate(e: React.FormEvent) {
+    e.preventDefault();
+    if (blocks.length === 0) return;
+    setSavingTemplate(true);
+    setError(null);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError("Lost connection to your account. Please try again.");
+      setSavingTemplate(false);
+      return;
+    }
+
+    const { data: template, error: templateError } = await supabase
+      .from("templates")
+      .insert({ name: templateName, owner_id: user.id })
+      .select("id")
+      .single();
+    if (templateError || !template) {
+      setError(templateError?.message ?? "Couldn't save this template — please try again.");
+      setSavingTemplate(false);
+      return;
+    }
+
+    const rows = blocks.map((b, i) => ({
+      template_id: template.id,
+      title: b.title,
+      start_time: toTimeInput(b.start_time),
+      end_time: toTimeInput(b.end_time),
+      location: b.location,
+      notes: b.notes,
+      position: i,
+    }));
+    const { error: blocksError } = await supabase.from("template_blocks").insert(rows);
+    if (blocksError) {
+      // Clean up the now-empty template rather than leaving an orphan
+      // that would later show up in the list with zero blocks.
+      await supabase.from("templates").delete().eq("id", template.id);
+      setError("Couldn't save this template — please try again.");
+      setSavingTemplate(false);
+      return;
+    }
+
+    setTemplates(null); // stale — refetch next time the apply modal opens
+    setSavingTemplate(false);
+    setSaveTemplateOpen(false);
+    setTemplateName("");
+  }
+
+  async function openApplyTemplate() {
+    setApplyTemplateOpen(true);
+    if (templates !== null) return;
+    setTemplatesLoading(true);
+    setError(null);
+    const { data, error: fetchError } = await supabase
+      .from("templates")
+      .select("*, template_blocks(count)")
+      .order("created_at", { ascending: false });
+    setTemplatesLoading(false);
+    if (fetchError || !data) {
+      setError("Couldn't load your templates — please try again.");
+      return;
+    }
+    setTemplates(
+      data.map((t) => {
+        const row = t as TemplateRow & { template_blocks: { count: number }[] };
+        return { ...row, blockCount: row.template_blocks[0]?.count ?? 0 };
+      })
+    );
+  }
+
+  async function applyTemplate(templateId: string) {
+    if (blocks.length > 0 && !confirm("Replace the current timeline with this template?")) return;
+    setApplyingTemplateId(templateId);
+    setError(null);
+
+    const { data: templateBlocks, error: fetchError } = await supabase
+      .from("template_blocks")
+      .select("*")
+      .eq("template_id", templateId)
+      .order("position");
+    if (fetchError || !templateBlocks || templateBlocks.length === 0) {
+      setError("Couldn't load this template — please try again.");
+      setApplyingTemplateId(null);
+      return;
+    }
+
+    const rows = (templateBlocks as TemplateBlockRow[]).map((tb, i) => ({
+      event_id: event.id,
+      title: tb.title,
+      ...blockTimes(event.date, tb.start_time, tb.end_time),
+      location: tb.location,
+      notes: tb.notes,
+      position: i,
+    }));
+
+    // Same order as the AI builder's save: insert the new blocks before
+    // removing the old ones, so a failed insert leaves the existing
+    // timeline untouched instead of already gone.
+    const oldBlockIds = blocks.map((b) => b.id);
+    const { data: inserted, error: insertError } = await supabase
+      .from("blocks")
+      .insert(rows)
+      .select("*");
+    if (insertError || !inserted) {
+      setError(insertError?.message ?? "Couldn't apply this template — please try again.");
+      setApplyingTemplateId(null);
+      return;
+    }
+
+    if (oldBlockIds.length > 0) {
+      const { error: deleteError } = await supabase.from("blocks").delete().in("id", oldBlockIds);
+      if (deleteError) {
+        setError(
+          "Applied the template, but couldn't clear the old timeline — you may see duplicate blocks. Please refresh and remove them by hand."
+        );
+        setApplyingTemplateId(null);
+        setBlocks((prev) =>
+          [...prev, ...(inserted as BlockRow[])].sort((a, b) => a.position - b.position)
+        );
+        setApplyTemplateOpen(false);
+        return;
+      }
+    }
+
+    setBlocks((inserted as BlockRow[]).sort((a, b) => a.position - b.position));
+    setApplyingTemplateId(null);
+    setApplyTemplateOpen(false);
+  }
+
+  async function deleteTemplate(templateId: string) {
+    if (!confirm("Delete this template?")) return;
+    const previous = templates;
+    setTemplates((prev) => (prev ? prev.filter((t) => t.id !== templateId) : prev));
+    const { error: deleteError } = await supabase.from("templates").delete().eq("id", templateId);
+    if (deleteError) {
+      setTemplates(previous);
+      setError("Couldn't delete this template — please try again.");
+    }
+  }
+
   return (
     <section>
       {error && (
@@ -263,16 +418,34 @@ export function TimelineEditor({
         </p>
       )}
       {isOwner && (
-        <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <Button onClick={() => setDraft(EMPTY_DRAFT)} className="w-full sm:flex-1">
-            + Add block
-          </Button>
-          <Link
-            href={`/events/${event.id}/generate`}
-            className="group flex h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-accent to-amber-500/80 px-4 text-[15px] font-bold text-white shadow-md hover:shadow-lg hover:from-accent-strong hover:to-amber-500 transition-all"
-          >
-            <StarsIcon size={18} className="transition-transform group-hover:scale-110 group-hover:rotate-12" /> AI Timeline Builder
-          </Link>
+        <div className="mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button onClick={() => setDraft(EMPTY_DRAFT)} className="w-full sm:flex-1">
+              + Add block
+            </Button>
+            <Link
+              href={`/events/${event.id}/generate`}
+              className="group flex h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-accent to-amber-500/80 px-4 text-[15px] font-bold text-white shadow-md hover:shadow-lg hover:from-accent-strong hover:to-amber-500 transition-all"
+            >
+              <StarsIcon size={18} className="transition-transform group-hover:scale-110 group-hover:rotate-12" /> AI Timeline Builder
+            </Link>
+          </div>
+          <div className="mt-2 flex items-center justify-end gap-4">
+            {blocks.length > 0 && (
+              <button
+                onClick={() => setSaveTemplateOpen(true)}
+                className="flex items-center gap-1 text-[12.5px] font-medium text-ink-faint hover:text-accent-ink"
+              >
+                <BookmarkAdd01Icon size={13} /> Save as template
+              </button>
+            )}
+            <button
+              onClick={openApplyTemplate}
+              className="flex items-center gap-1 text-[12.5px] font-medium text-ink-faint hover:text-accent-ink"
+            >
+              <Copy01Icon size={13} /> Use a template
+            </button>
+          </div>
         </div>
       )}
 
@@ -398,6 +571,89 @@ export function TimelineEditor({
             </div>
           </form>
         )}
+      </Modal>
+
+      <Modal
+        open={saveTemplateOpen}
+        onClose={() => setSaveTemplateOpen(false)}
+        title="Save as template"
+      >
+        <form onSubmit={saveAsTemplate} className="space-y-3">
+          {error && (
+            <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">{error}</p>
+          )}
+          <Field label="Template name">
+            <Input
+              required
+              autoFocus
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Classic wedding day"
+            />
+          </Field>
+          <p className="text-[12.5px] text-ink-faint">
+            Saves the {blocks.length} block{blocks.length === 1 ? "" : "s"} on this timeline —
+            titles, times, locations, and notes — as a reusable template.
+          </p>
+          <Button
+            type="submit"
+            disabled={savingTemplate || templateName.trim().length === 0}
+            className="w-full"
+          >
+            {savingTemplate ? "Saving…" : "Save template"}
+          </Button>
+        </form>
+      </Modal>
+
+      <Modal
+        open={applyTemplateOpen}
+        onClose={() => setApplyTemplateOpen(false)}
+        title="Use a template"
+      >
+        <div className="space-y-3">
+          {error && (
+            <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">{error}</p>
+          )}
+          {templatesLoading ? (
+            <p className="py-6 text-center text-[13.5px] text-ink-faint">Loading…</p>
+          ) : !templates || templates.length === 0 ? (
+            <p className="py-6 text-center text-[13.5px] text-ink-faint">
+              No saved templates yet — build a timeline, then &ldquo;Save as template&rdquo; to
+              reuse it later.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {templates.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-medium">{t.name}</p>
+                    <p className="text-[12px] text-ink-faint">
+                      {t.blockCount} block{t.blockCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => applyTemplate(t.id)}
+                    disabled={applyingTemplateId !== null}
+                    className="shrink-0 rounded-md bg-accent px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-accent-strong disabled:opacity-60"
+                  >
+                    {applyingTemplateId === t.id ? "Applying…" : "Apply"}
+                  </button>
+                  <button
+                    onClick={() => deleteTemplate(t.id)}
+                    aria-label="Delete template"
+                    disabled={applyingTemplateId !== null}
+                    className="shrink-0 rounded-md p-1.5 text-ink-faint hover:bg-danger-tint hover:text-danger disabled:opacity-60"
+                  >
+                    <Delete02Icon size={15} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Modal>
     </section>
   );

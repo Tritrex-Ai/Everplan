@@ -10,8 +10,11 @@ import { GuestLinkDialog } from "@/components/GuestLinkDialog";
 import { AccountMenu } from "@/components/AccountMenu";
 import { Wordmark } from "@/components/Wordmark";
 import { Select } from "@/components/ui";
+import { downloadIcs } from "@/lib/ics";
 import {
   Calendar01Icon,
+  CalendarAdd01Icon,
+  PrinterIcon,
   Camera01Icon,
   Activity01Icon,
   UserAdd01Icon,
@@ -21,7 +24,7 @@ import {
   Share01Icon,
   MoreHorizontalIcon,
 } from "hugeicons-react";
-import type { EventRow } from "@/lib/types";
+import type { BlockRow, EventRow } from "@/lib/types";
 
 const TABS = [
   { slug: "", label: "Timeline" },
@@ -66,6 +69,7 @@ export function EventWorkspaceChrome({
   const [moreOpen, setMoreOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
   const [onlineCount, setOnlineCount] = useState(1);
+  const [icsBusy, setIcsBusy] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
   // Same click-outside/Escape pattern as AccountMenu's dropdown.
@@ -130,6 +134,26 @@ export function EventWorkspaceChrome({
     else params.delete("previewAs");
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
+
+  async function exportCalendar() {
+    setIcsBusy(true);
+    const supabase = createClient();
+    const { data: blocks, error } = await supabase
+      .from("blocks")
+      .select("*")
+      .eq("event_id", event.id)
+      .order("position");
+    setIcsBusy(false);
+    if (error) {
+      alert("Couldn't export the calendar — please try again.");
+      return;
+    }
+    if (!blocks || blocks.length === 0) {
+      alert("Add timeline blocks first — there's nothing to export yet.");
+      return;
+    }
+    downloadIcs(event, blocks as BlockRow[]);
   }
 
   async function deleteEvent() {
@@ -198,6 +222,21 @@ export function EventWorkspaceChrome({
               className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
             >
               <Edit01Icon size={17} className="text-ink-soft" /> Edit event
+            </Link>
+            <button
+              onClick={() => { setMoreOpen(false); exportCalendar(); }}
+              disabled={icsBusy}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2 disabled:opacity-60"
+            >
+              <CalendarAdd01Icon size={17} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
+            </button>
+            <Link
+              href={`${base}/print`}
+              target="_blank"
+              onClick={() => setMoreOpen(false)}
+              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
+            >
+              <PrinterIcon size={17} className="text-ink-soft" /> Export as PDF
             </Link>
             <div className="my-1 h-px bg-line/60" />
             <button
@@ -365,6 +404,21 @@ export function EventWorkspaceChrome({
                 className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
               >
                 <Edit01Icon size={20} className="text-ink-soft" /> Edit event
+              </Link>
+              <button
+                onClick={() => { setOptionsOpen(false); exportCalendar(); }}
+                disabled={icsBusy}
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 disabled:opacity-60"
+              >
+                <CalendarAdd01Icon size={20} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
+              </button>
+              <Link
+                href={`${base}/print`}
+                target="_blank"
+                onClick={() => setOptionsOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+              >
+                <PrinterIcon size={20} className="text-ink-soft" /> Export as PDF
               </Link>
               <button
                 onClick={() => { setOptionsOpen(false); deleteEvent(); }}

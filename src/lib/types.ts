@@ -98,3 +98,23 @@ export type DraftBlock = {
   location: string;
   notes: string;
 };
+
+export type TemplateRow = {
+  id: string;
+  owner_id: string;
+  name: string;
+  created_at: string;
+};
+
+/** start_time/end_time are HH:MM text, not timestamps — a template isn't
+ * tied to any event's date. See the migration for why. */
+export type TemplateBlockRow = {
+  id: string;
+  template_id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+  notes: string | null;
+  position: number;
+};
