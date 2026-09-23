@@ -56,10 +56,10 @@ The actual audit — every feature from the Coordon walkthrough, whether Everpla
 | AI Timeline Assistant (upload a PDF/image, chat to build) | Yes — the AI builder now also accepts an uploaded PDF or photo | Done | Extended the existing AI builder rather than adding a new one. Photographers often get a timeline PDF straight from the coordinator and no longer have to retype it. |
 | Reusable timeline/task templates | No | **Worth considering** | Speeds up the core job (building timelines) without adding new feature surface. |
 | Floating bottom pill tab bar | No — sidebar/top nav | **Skip** | Cosmetic nav overhaul; high effort relative to value. |
-| Richer empty states (multiple concrete next actions) | Partial — one CTA today | **Add** | Zero new feature surface, makes existing functionality (AI builder + manual add) more discoverable. |
-| Auto-generated shot lists from client questionnaire *(ShotLace, not Coordon)* | No | **Add** | The headline recommendation from this research — sharpens the existing niche instead of expanding it. |
+| Richer empty states (multiple concrete next actions) | Yes — the Timeline empty state already surfaces "+ Add block" and "AI Timeline Builder" side by side | Already have | This line was stale when first written — the two-CTA layout predates this audit. No work needed. |
+| Auto-generated shot lists from client questionnaire *(ShotLace, not Coordon)* | Yes — "Generate list" per block on the Shots tab | Done | Was the headline recommendation from this research. Describe who needs group/family shots in plain language and Claude drafts an ordered, peel-away-style list against that block, editable before saving. |
 
-**Net read:** most of what Coordon has and Everplan doesn't is correctly out of scope — it belongs to a different job entirely. The genuine adds are narrow: better empty states, auto-generated shot lists, PDF/image input for the AI builder, and maybe reusable templates. Everything else on this list is either already covered in a more focused form, or purpose-built for a buyer Everplan isn't chasing.
+**Net read:** most of what Coordon has and Everplan doesn't is correctly out of scope — it belongs to a different job entirely. Of the genuine adds identified here, the two real ones are shipped: the AI timeline builder reads an attached PDF/photo, and shot lists can now be auto-generated per block from a plain-language description of who needs group/family photos. What's left is low-priority (save-to-calendar, PDF export) or optional (reusable templates) — nothing left that's actually blocking the product.
 
 ## What Everplan explicitly is not, and shouldn't become
 

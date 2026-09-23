@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
-import { Badge, Button, EmptyState, Field, Input, Modal, Select, Textarea } from "@/components/ui";
+import { Badge, Button, EmptyState, Field, Input, Modal, Select, Spinner, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
 import { canCreateShots, canEditShot, canToggleShotStatus, type ViewerRole } from "@/lib/roles";
 import { durationMinutes } from "@/lib/time";
-import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon } from "hugeicons-react";
+import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon, StarsIcon } from "hugeicons-react";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
 const DEFAULT_SHOT_MINUTES = 5;
+const SHOTLIST_EXAMPLE =
+  "Bride's parents (John & Mary), 2 siblings; groom's parents (divorced — don't group together) Femi & Rita; both sets of grandparents; bridal party of 6; extended family group of ~20";
 
 type ShotDraft = {
   blockId: string;
@@ -19,6 +21,8 @@ type ShotDraft = {
   priority: "low" | "normal" | "high";
   durationMinutes: number;
 };
+
+type ShotlistDraft = { title: string; description: string; duration_minutes: number };
 
 export function ShotsPanel({
   eventId,
@@ -41,6 +45,12 @@ export function ShotsPanel({
   const [detailShotId, setDetailShotId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shotlistBlock, setShotlistBlock] = useState<{ id: string; title: string } | null>(null);
+  const [shotlistDescription, setShotlistDescription] = useState("");
+  const [shotlistDrafts, setShotlistDrafts] = useState<ShotlistDraft[] | null>(null);
+  const [shotlistBusy, setShotlistBusy] = useState(false);
+  const [shotlistSaving, setShotlistSaving] = useState(false);
+  const [shotlistError, setShotlistError] = useState<string | null>(null);
 
   // No realtime here meant a teammate checking a shot off, or the owner
   // sharing/unsharing one, never reached anyone else's Shots tab without a
@@ -220,6 +230,77 @@ export function ShotsPanel({
     setShots((prev) => [...prev, data as ShotRow]);
     setBusy(false);
     setDraft(null);
+  }
+
+  function openShotlist(block: BlockRow) {
+    setShotlistBlock({ id: block.id, title: block.title });
+    setShotlistDescription("");
+    setShotlistDrafts(null);
+    setShotlistError(null);
+  }
+
+  function closeShotlist() {
+    setShotlistBlock(null);
+  }
+
+  async function generateShotlist() {
+    if (!shotlistBlock) return;
+    setShotlistBusy(true);
+    setShotlistError(null);
+    try {
+      const res = await fetch("/api/generate-shots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          blockId: shotlistBlock.id,
+          description: shotlistDescription,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setShotlistError(json.code === "MISSING_API_KEY" ? "MISSING_API_KEY" : json.error ?? "Generation failed — try again.");
+      } else {
+        setShotlistDrafts(json.shots as ShotlistDraft[]);
+      }
+    } catch {
+      setShotlistError("Couldn't reach the server — check your connection.");
+    }
+    setShotlistBusy(false);
+  }
+
+  function updateShotlistDraft(index: number, patch: Partial<ShotlistDraft>) {
+    setShotlistDrafts((prev) =>
+      prev ? prev.map((d, i) => (i === index ? { ...d, ...patch } : d)) : prev
+    );
+  }
+
+  function removeShotlistDraft(index: number) {
+    setShotlistDrafts((prev) => (prev ? prev.filter((_, i) => i !== index) : prev));
+  }
+
+  async function saveShotlist() {
+    if (!shotlistBlock || !shotlistDrafts || shotlistDrafts.length === 0) return;
+    setShotlistSaving(true);
+    setShotlistError(null);
+
+    const rows = shotlistDrafts.map((d) => ({
+      event_id: eventId,
+      block_id: shotlistBlock.id,
+      title: d.title,
+      description: d.description || null,
+      duration_minutes: d.duration_minutes,
+    }));
+
+    const { data, error: insertError } = await supabase.from("shots").insert(rows).select("*");
+    if (insertError || !data) {
+      setShotlistError(insertError?.message ?? "Couldn't save the shot list — try again.");
+      setShotlistSaving(false);
+      return;
+    }
+    setShots((prev) => [...prev, ...(data as ShotRow[])]);
+    setShotlistSaving(false);
+    closeShotlist();
   }
 
   const sharedCount = shots.filter((s) => s.visibility === "shared").length;
@@ -407,20 +488,28 @@ export function ShotsPanel({
                     </ul>
                   )}
                   {canCreate && (
-                    <button
-                      onClick={() =>
-                        setDraft({
-                          blockId: block.id,
-                          title: "",
-                          description: "",
-                          priority: "normal",
-                          durationMinutes: DEFAULT_SHOT_MINUTES,
-                        })
-                      }
-                      className="block w-full bg-surface-2/50 px-4 py-2.5 text-left text-[13.5px] font-medium text-accent-ink hover:bg-accent-tint/50"
-                    >
-                      + Add shot
-                    </button>
+                    <div className="flex">
+                      <button
+                        onClick={() =>
+                          setDraft({
+                            blockId: block.id,
+                            title: "",
+                            description: "",
+                            priority: "normal",
+                            durationMinutes: DEFAULT_SHOT_MINUTES,
+                          })
+                        }
+                        className="flex-1 bg-surface-2/50 px-4 py-2.5 text-left text-[13.5px] font-medium text-accent-ink hover:bg-accent-tint/50"
+                      >
+                        + Add shot
+                      </button>
+                      <button
+                        onClick={() => openShotlist(block)}
+                        className="flex-1 border-l border-line/60 bg-surface-2/50 px-4 py-2.5 text-left text-[13.5px] font-medium text-accent-ink hover:bg-accent-tint/50"
+                      >
+                        <StarsIcon size={13} className="inline mr-1 -mt-0.5" /> Generate list
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -482,6 +571,126 @@ export function ShotsPanel({
               {busy ? "Adding…" : "Add shot"}
             </Button>
           </form>
+        )}
+      </Modal>
+
+      <Modal
+        open={shotlistBlock !== null}
+        onClose={closeShotlist}
+        title={shotlistBlock ? `Generate shots for "${shotlistBlock.title}"` : "Generate shot list"}
+      >
+        {shotlistBlock && (
+          <div className="space-y-3">
+            {shotlistError === "MISSING_API_KEY" ? (
+              <div className="rounded-lg bg-surface-2 p-4 outline outline-2 outline-accent">
+                <h3 className="font-semibold text-accent-ink">API Key Required</h3>
+                <p className="mt-1 text-[13.5px] text-ink-soft">
+                  The AI shot list builder requires an Anthropic API key. Add{" "}
+                  <code className="rounded bg-surface-3 px-1 py-0.5 text-[12px] text-ink">
+                    ANTHROPIC_API_KEY=sk-ant-...
+                  </code>{" "}
+                  to your{" "}
+                  <code className="rounded bg-surface-3 px-1 py-0.5 text-[12px] text-ink">
+                    .env.local
+                  </code>{" "}
+                  file and restart the server.
+                </p>
+              </div>
+            ) : shotlistError ? (
+              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+                {shotlistError}
+              </p>
+            ) : null}
+
+            {!shotlistDrafts ? (
+              <>
+                <Field label="Who needs group or family photos?">
+                  <Textarea
+                    rows={5}
+                    autoFocus
+                    value={shotlistDescription}
+                    onChange={(e) => setShotlistDescription(e.target.value)}
+                    placeholder={SHOTLIST_EXAMPLE}
+                  />
+                </Field>
+                <Button
+                  onClick={generateShotlist}
+                  disabled={shotlistBusy || shotlistDescription.trim().length < 10}
+                  className="w-full"
+                >
+                  {shotlistBusy ? (
+                    <>
+                      <Spinner /> Building your shot list…
+                    </>
+                  ) : (
+                    <>
+                      <StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Generate shot list
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
+                    Generated · editable
+                  </p>
+                  <p className="text-[13px] text-ink-faint">{shotlistDrafts.length} shots</p>
+                </div>
+                <ul className="max-h-[45dvh] space-y-2 overflow-y-auto">
+                  {shotlistDrafts.map((d, i) => (
+                    <li key={i} className="rounded-lg bg-surface-2 p-3">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={d.title}
+                          onChange={(e) => updateShotlistDraft(i, { title: e.target.value })}
+                          className="!h-9 flex-1 font-semibold !text-[13.5px]"
+                        />
+                        <Input
+                          type="number"
+                          min={1}
+                          value={d.duration_minutes}
+                          onChange={(e) =>
+                            updateShotlistDraft(i, {
+                              duration_minutes: Number(e.target.value) || 1,
+                            })
+                          }
+                          className="!h-9 !w-16 shrink-0 !text-[13px]"
+                        />
+                        <button
+                          onClick={() => removeShotlistDraft(i)}
+                          aria-label="Remove shot"
+                          className="shrink-0 rounded-md p-1.5 text-ink-faint hover:bg-danger-tint hover:text-danger"
+                        >
+                          <Cancel01Icon size={14} />
+                        </button>
+                      </div>
+                      {d.description ? (
+                        <p className="mt-1.5 px-1 text-[12.5px] text-ink-soft">{d.description}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShotlistDrafts(null)}
+                    className="flex-1 rounded-md px-3 py-2.5 text-[13.5px] font-medium text-ink-faint hover:bg-surface-2"
+                  >
+                    Back
+                  </button>
+                  <Button
+                    onClick={saveShotlist}
+                    disabled={shotlistSaving || shotlistDrafts.length === 0}
+                    className="flex-[2]"
+                  >
+                    {shotlistSaving
+                      ? "Adding…"
+                      : `Add ${shotlistDrafts.length} shot${shotlistDrafts.length === 1 ? "" : "s"}`}
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </Modal>
 
