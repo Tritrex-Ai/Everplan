@@ -10,10 +10,32 @@ import {
 
 export const maxDuration = 120;
 
-const RequestSchema = z.object({
-  eventId: z.string().uuid(),
-  description: z.string().min(10).max(4000),
+// Base64 is ~4/3 the size of the raw file — this caps the decoded file at
+// roughly 6MB, which is comfortably under Vercel's request body limit and
+// well within what the model needs for a schedule PDF or photo.
+const MAX_FILE_BASE64_CHARS = 8_000_000;
+
+const FileSchema = z.object({
+  name: z.string().max(200),
+  mediaType: z.enum([
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ]),
+  data: z.string().min(1).max(MAX_FILE_BASE64_CHARS),
 });
+
+const RequestSchema = z
+  .object({
+    eventId: z.string().uuid(),
+    description: z.string().max(4000).default(""),
+    file: FileSchema.optional(),
+  })
+  .refine((v) => v.description.trim().length >= 10 || v.file, {
+    message: "Describe the day, or attach a PDF or photo of the schedule, first.",
+  });
 
 const TimeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const ResultSchema = z.object({
@@ -43,7 +65,11 @@ export async function POST(request: Request) {
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Describe the day in a sentence or two first." },
+      {
+        error:
+          parsed.error.issues[0]?.message ??
+          "Describe the day, or attach a PDF or photo of the schedule, first.",
+      },
       { status: 400 }
     );
   }
@@ -74,6 +100,33 @@ export async function POST(request: Request) {
 
   const anthropic = new Anthropic();
 
+  const content: Anthropic.MessageParam["content"] = [];
+  const { file } = parsed.data;
+  if (file) {
+    content.push(
+      file.mediaType === "application/pdf"
+        ? {
+            type: "document",
+            source: { type: "base64", media_type: "application/pdf", data: file.data },
+          }
+        : {
+            type: "image",
+            source: { type: "base64", media_type: file.mediaType, data: file.data },
+          }
+    );
+  }
+  content.push({
+    type: "text",
+    text: buildTimelineUserPrompt({
+      description: parsed.data.description,
+      eventType: event.event_type,
+      date: event.date,
+      guestCount: event.guest_count,
+      coverage: event.coverage_needed ?? [],
+      hasAttachment: Boolean(file),
+    }),
+  });
+
   try {
     const response = await anthropic.messages.create({
       model: "claude-opus-4-8",
@@ -88,13 +141,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "user",
-          content: buildTimelineUserPrompt({
-            description: parsed.data.description,
-            eventType: event.event_type,
-            date: event.date,
-            guestCount: event.guest_count,
-            coverage: event.coverage_needed ?? [],
-          }),
+          content,
         },
       ],
     });

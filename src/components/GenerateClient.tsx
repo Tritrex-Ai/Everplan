@@ -1,15 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { blockTimes } from "@/lib/time";
 import { Button, Field, Input, Spinner, Textarea } from "@/components/ui";
-import { StarsIcon, Cancel01Icon } from "hugeicons-react";
+import { StarsIcon, Cancel01Icon, Attachment01Icon, File01Icon } from "hugeicons-react";
 import type { DraftBlock, EventRow } from "@/lib/types";
 
 const EXAMPLE =
   "Yoruba traditional at 11, white ceremony at 2, cocktail hour after, reception at 6 with speeches and first dance, about 200 guests. Getting-ready coverage from 8am at the bride's family house.";
+
+const ACCEPTED_FILE_TYPES = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+const MAX_FILE_BYTES = 4 * 1024 * 1024;
+
+type AttachedFile = { name: string; mediaType: string; data: string };
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.slice(result.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 export function GenerateClient({
   event,
@@ -25,6 +48,35 @@ export function GenerateClient({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [file, setFile] = useState<AttachedFile | null>(null);
+  const [fileBusy, setFileBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function attachFile(picked: File | null | undefined) {
+    if (!picked) return;
+    setError(null);
+    if (!ACCEPTED_FILE_TYPES.includes(picked.type)) {
+      setError("Attach a PDF, JPG, PNG, GIF, or WEBP file.");
+      return;
+    }
+    if (picked.size > MAX_FILE_BYTES) {
+      setError("That file is too big — keep it under 4MB.");
+      return;
+    }
+    setFileBusy(true);
+    try {
+      const data = await readFileAsBase64(picked);
+      setFile({ name: picked.name, mediaType: picked.type, data });
+    } catch {
+      setError("Couldn't read that file — try again.");
+    }
+    setFileBusy(false);
+  }
+
+  function removeFile() {
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   async function generate() {
     setBusy(true);
@@ -33,7 +85,7 @@ export function GenerateClient({
       const res = await fetch("/api/generate-timeline", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId: event.id, description }),
+        body: JSON.stringify({ eventId: event.id, description, file: file ?? undefined }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -121,9 +173,42 @@ export function GenerateClient({
             placeholder={EXAMPLE}
           />
         </Field>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={ACCEPTED_FILE_TYPES.join(",")}
+          className="hidden"
+          onChange={(e) => attachFile(e.target.files?.[0])}
+        />
+
+        {file ? (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2">
+            <File01Icon size={16} className="shrink-0 text-ink-faint" />
+            <span className="min-w-0 flex-1 truncate text-[13px] text-ink-soft">{file.name}</span>
+            <button
+              onClick={removeFile}
+              aria-label="Remove attachment"
+              className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-danger-tint hover:text-danger"
+            >
+              <Cancel01Icon size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={fileBusy}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 py-2.5 text-[13px] text-ink-faint hover:border-accent hover:text-accent-ink"
+          >
+            <Attachment01Icon size={15} />
+            {fileBusy ? "Reading file…" : "Attach a PDF or photo of the schedule (optional)"}
+          </button>
+        )}
+
         <Button
           onClick={generate}
-          disabled={busy || description.trim().length < 10}
+          disabled={busy || fileBusy || (!file && description.trim().length < 10)}
           className="mt-3 w-full"
         >
           {busy ? (
