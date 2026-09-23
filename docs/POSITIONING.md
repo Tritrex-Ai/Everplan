@@ -53,7 +53,7 @@ The actual audit — every feature from the Coordon walkthrough, whether Everpla
 | Tasks as a separate tab | No — shots serve this role | **Skip** | Already covered; a second to-do system would be redundant. |
 | Save to Calendar (native device export) | No | **Low-priority maybe** | Cheap, no new feature surface, genuine minor utility. |
 | Export Event Data as PDF | No | **Low-priority maybe** | Same reasoning — cheap, self-contained, not urgent. |
-| AI Timeline Assistant (upload a PDF/image, chat to build) | Partial — Everplan's AI builder takes plain-language text only | **Worth enhancing** | Not a new feature — extending the existing AI builder to accept an uploaded PDF/image. Photographers often get a timeline PDF straight from the coordinator and currently have to retype it. Real, common friction. |
+| AI Timeline Assistant (upload a PDF/image, chat to build) | Yes — the AI builder now also accepts an uploaded PDF or photo | Done | Extended the existing AI builder rather than adding a new one. Photographers often get a timeline PDF straight from the coordinator and no longer have to retype it. |
 | Reusable timeline/task templates | No | **Worth considering** | Speeds up the core job (building timelines) without adding new feature surface. |
 | Floating bottom pill tab bar | No — sidebar/top nav | **Skip** | Cosmetic nav overhaul; high effort relative to value. |
 | Richer empty states (multiple concrete next actions) | Partial — one CTA today | **Add** | Zero new feature surface, makes existing functionality (AI builder + manual add) more discoverable. |
