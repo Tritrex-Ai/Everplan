@@ -315,7 +315,7 @@ export function ShotsPanel({
         </p>
       )}
       {isOwner ? (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-accent-tint px-4 py-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-accent-tint border border-accent/20 px-4 py-3">
           <p className="text-[13.5px] font-medium text-accent-ink">
             <LockKeyIcon size={14} className="inline mr-1 -mt-0.5" /> Private by default — only you see these
           </p>
@@ -384,7 +384,7 @@ export function ShotsPanel({
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-lg bg-surface-1">
+                <div className="overflow-hidden rounded-2xl bg-surface-1 border border-line shadow-sm">
                   {blockShots.length === 0 ? (
                     <p className="px-4 py-3.5 text-[14px] text-ink-faint">
                       {canCreate ? "No shots yet." : "Nothing shared for this block."}

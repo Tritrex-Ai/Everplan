@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button, Field, Input, PasswordInput } from "@/components/ui";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuthHero, AuthHeroMobile } from "@/components/AuthHero";
 
@@ -79,7 +80,10 @@ export default function LoginPage() {
       <AuthHero />
       <AuthHeroMobile />
 
-      <div className="relative flex flex-col justify-center px-8 py-12 sm:px-16 lg:min-h-dvh lg:px-20 xl:px-28 bg-surface-0 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.05)] z-10">
+      <div className="relative flex flex-col justify-center px-8 py-12 sm:px-16 lg:min-h-dvh lg:px-20 xl:px-28 bg-surface-0 z-10">
+        <div className="absolute top-6 right-6 z-20">
+          <ThemeToggle />
+        </div>
         <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]"></div>
         
         <div className="relative z-10 mx-auto w-full max-w-lg lg:mx-0 lg:max-w-xl">

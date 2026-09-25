@@ -7,6 +7,8 @@ import { AccountMenu } from "@/components/AccountMenu";
 
 import { DashboardSquare01Icon, UserCircleIcon } from "hugeicons-react";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 const NAV_ITEMS = [
   { name: "Events", href: "/events", icon: DashboardSquare01Icon },
   { name: "Account", href: "/account", icon: UserCircleIcon },
@@ -36,7 +38,7 @@ export function DashboardSidebar({
               href={item.href}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[14.5px] font-medium transition-all ${
                 isActive
-                  ? "bg-accent-tint text-accent-strong"
+                  ? "bg-accent-tint text-accent-strong font-semibold"
                   : "text-ink-soft hover:bg-surface-2 hover:text-ink"
               }`}
             >
@@ -47,7 +49,8 @@ export function DashboardSidebar({
         })}
       </nav>
 
-      <div className="p-4 pt-2">
+      <div className="p-4 pt-2 flex flex-col gap-2">
+        <ThemeToggle showLabel className="w-full justify-start" />
         <AccountMenu fullName={fullName} email={email} />
       </div>
     </aside>

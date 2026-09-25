@@ -11,6 +11,7 @@ import { AccountMenu } from "@/components/AccountMenu";
 import { Wordmark } from "@/components/Wordmark";
 import { Select } from "@/components/ui";
 import { downloadIcs } from "@/lib/ics";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   Calendar01Icon,
   CalendarAdd01Icon,
@@ -192,6 +193,7 @@ export function EventWorkspaceChrome({
         )}
       </div>
       {previewControl}
+      <ThemeToggle />
       <button
         onClick={() => setInviteOpen(true)}
         className="shrink-0 flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-strong transition-colors"
@@ -301,7 +303,8 @@ export function EventWorkspaceChrome({
             </Link>
           ))}
         </nav>
-        <div className="mt-auto pt-5">
+        <div className="mt-auto pt-5 flex flex-col gap-2">
+          <ThemeToggle showLabel className="w-full justify-start" />
           <AccountMenu fullName={fullName} email={email} />
         </div>
       </aside>
@@ -321,7 +324,10 @@ export function EventWorkspaceChrome({
               {event.location ? ` · ${event.location}` : ""}
             </p>
           </div>
-          <AccountMenu fullName={fullName} email={email} compact />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AccountMenu fullName={fullName} email={email} compact />
+          </div>
         </div>
 
         {isOwner && (
@@ -329,38 +335,53 @@ export function EventWorkspaceChrome({
             {previewControl}
             <button 
               onClick={() => setOptionsOpen(true)} 
-              className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-2 text-ink hover:bg-surface-3 transition-colors"
+              className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-surface-2 text-ink hover:bg-surface-3 transition-colors border border-line"
               aria-label="Event options"
             >
               <Share01Icon size={16} />
             </button>
           </div>
         )}
-
-        <nav className="mt-4 flex gap-1 rounded-lg bg-surface-2 p-1">
-          {TABS.map((tab) => (
-            <Link
-              key={tab.slug}
-              href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
-              className={`flex-1 rounded-md py-2 text-center text-[14px] font-medium transition-colors ${
-                active === tab.slug
-                  ? "bg-surface-1 text-ink"
-                  : "text-ink-soft hover:text-ink"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <div className="min-w-0 flex-1 flex flex-col">
         {previewBanner}
         {actionsNavbar}
-        <main className="flex-1 px-5 pb-16 pt-6 lg:px-10 lg:pb-12 lg:pt-8">
+        <main className="flex-1 px-5 pb-24 pt-6 lg:px-10 lg:pb-12 lg:pt-8">
           {children}
         </main>
       </div>
+
+      {/* Mobile Floating Glass Pill Nav Bar */}
+      <nav className="fixed bottom-4 inset-x-4 z-40 lg:hidden glass-panel rounded-2xl p-1.5 flex items-center justify-around shadow-2xl border border-line">
+        {TABS.map((tab) => {
+          const Icon = TAB_ICONS[tab.slug];
+          const isActive = active === tab.slug;
+          return (
+            <Link
+              key={tab.slug}
+              href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
+              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all ${
+                isActive
+                  ? "bg-gradient-to-r from-accent to-emerald-600 text-white shadow-sm font-semibold"
+                  : "text-ink-soft hover:text-ink hover:bg-surface-2/60"
+              }`}
+            >
+              {Icon && <Icon size={18} className={isActive ? "text-white" : "text-ink-faint"} />}
+              <span className="text-[11px] mt-0.5">{tab.label}</span>
+            </Link>
+          );
+        })}
+        {isOwner && (
+          <button
+            onClick={() => setOptionsOpen(true)}
+            className="flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-ink-soft hover:text-ink hover:bg-surface-2/60 transition-all"
+          >
+            <Share01Icon size={18} className="text-ink-faint" />
+            <span className="text-[11px] mt-0.5">Options</span>
+          </button>
+        )}
+      </nav>
 
       <InviteDialog
         eventId={event.id}
@@ -376,11 +397,12 @@ export function EventWorkspaceChrome({
       />
       {/* Mobile Options Bottom Sheet */}
       {optionsOpen && isOwner && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-ink/40 lg:hidden" onClick={() => setOptionsOpen(false)}>
+        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOptionsOpen(false)}>
           <div 
-            className="w-full rounded-t-[24px] bg-surface-1 p-5 pb-8 shadow-xl animate-in slide-in-from-bottom duration-300"
+            className="w-full rounded-t-[28px] bg-surface-1 border-t border-line p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ink-faint/30" />
             <div className="mb-5 flex items-center justify-between">
               <h3 className="text-[17px] font-semibold text-ink">Event Options</h3>
               <button onClick={() => setOptionsOpen(false)} className="text-[14px] font-medium text-ink-soft hover:text-ink">Cancel</button>
@@ -394,21 +416,21 @@ export function EventWorkspaceChrome({
               </button>
               <button
                 onClick={() => { setOptionsOpen(false); setGuestLinkOpen(true); }}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
               >
                 <Link01Icon size={20} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
               </button>
               <Link
                 href={`${base}/edit`}
                 onClick={() => setOptionsOpen(false)}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
               >
                 <Edit01Icon size={20} className="text-ink-soft" /> Edit event
               </Link>
               <button
                 onClick={() => { setOptionsOpen(false); exportCalendar(); }}
                 disabled={icsBusy}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 disabled:opacity-60"
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line disabled:opacity-60"
               >
                 <CalendarAdd01Icon size={20} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
               </button>
@@ -416,13 +438,13 @@ export function EventWorkspaceChrome({
                 href={`${base}/print`}
                 target="_blank"
                 onClick={() => setOptionsOpen(false)}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3"
+                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
               >
                 <PrinterIcon size={20} className="text-ink-soft" /> Export as PDF
               </Link>
               <button
                 onClick={() => { setOptionsOpen(false); deleteEvent(); }}
-                className="flex w-full items-center gap-3 rounded-xl bg-danger-tint px-4 py-3.5 text-[15px] font-medium text-danger hover:bg-danger hover:text-white"
+                className="flex w-full items-center gap-3 rounded-xl bg-danger-tint px-4 py-3.5 text-[15px] font-medium text-danger hover:bg-danger hover:text-white border border-danger/20"
               >
                 <Delete02Icon size={20} /> Delete event
               </button>

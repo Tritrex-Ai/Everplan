@@ -1,71 +1,145 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Everplan design system.
+   Everplan Modernized Design System (Inspired by Coordon + Pro Creative Tools)
+   Dual Theme Architecture: Midnight Dark & Crisp Light
+   --------------------------------------------------------------------------- */
 
-   Principles (deliberate, keep consistent):
-   - Flat surfaces. No drop shadows anywhere; depth comes from tonal steps
-     (surface-0 page -> surface-1 card -> surface-2 inset).
-   - Borders are the exception, not the rule. Hairline `--color-line` only
-     where a tone shift can't do the separation.
-   - One accent (Everplan indigo), used sparingly: primary action, focus,
-     live indicators. Everything else is a warm neutral ramp.
-   - OKLCH so tonal steps are perceptually even in light and dark.
-   - The live day-of board runs on the dark ramp (phone, in hand, dim venue).
---------------------------------------------------------------------------- */
+:root {
+  /* LIGHT THEME (Crisp Porcelain + Emerald Accent) */
+  --color-surface-0: #f8fafc;        /* page background */
+  --color-surface-1: #ffffff;        /* elevated card */
+  --color-surface-2: #f1f5f9;        /* insets, search, inputs */
+  --color-surface-3: #e2e8f0;        /* hover / pressed */
+  --color-line: #e2e8f0;             /* hairline border */
+  --color-line-focus: #0da58e;
+
+  --color-ink: #0f172a;             /* slate-900 primary text */
+  --color-ink-soft: #475569;        /* slate-600 secondary text */
+  --color-ink-faint: #94a3b8;       /* slate-400 placeholder/meta */
+
+  /* Coordon signature emerald / teal accent */
+  --color-accent: #0da58e;
+  --color-accent-strong: #0b8f7b;
+  --color-accent-tint: rgba(13, 165, 142, 0.10);
+  --color-accent-tint-strong: rgba(13, 165, 142, 0.18);
+  --color-accent-ink: #097262;
+  --color-accent-glow: rgba(13, 165, 142, 0.22);
+
+  /* Semantics */
+  --color-ok: #10b981;
+  --color-ok-tint: rgba(16, 185, 129, 0.12);
+  --color-ok-ink: #047857;
+  --color-warn: #f59e0b;
+  --color-warn-tint: rgba(245, 158, 11, 0.12);
+  --color-warn-ink: #b45309;
+  --color-danger: #ef4444;
+  --color-danger-tint: rgba(239, 68, 68, 0.12);
+  --color-danger-ink: #dc2626;
+
+  /* Night ramp fallback for light theme */
+  --color-night-0: #0b0f19;
+  --color-night-1: #131c2e;
+  --color-night-2: #1a263c;
+  --color-night-line: rgba(255, 255, 255, 0.08);
+  --color-night-ink: #f8fafc;
+  --color-night-ink-soft: #94a3b8;
+  --color-night-accent: #2dd4bf;
+}
+
+.dark,
+[data-theme="dark"] {
+  /* DARK THEME (Midnight Obsidian + Electric Emerald) */
+  --color-surface-0: #0b0f19;        /* midnight canvas */
+  --color-surface-1: #131c2e;        /* rich navy card */
+  --color-surface-2: #1a263c;        /* inset input / well */
+  --color-surface-3: #22324f;        /* hover / active */
+  --color-line: rgba(255, 255, 255, 0.08); /* crisp translucent border */
+  --color-line-focus: #0da58e;
+
+  --color-ink: #f8fafc;             /* crisp white text */
+  --color-ink-soft: #94a3b8;        /* slate-400 secondary text */
+  --color-ink-faint: #64748b;       /* slate-500 placeholder/meta */
+
+  /* Coordon vibrant electric emerald/teal */
+  --color-accent: #0da58e;
+  --color-accent-strong: #10b981;
+  --color-accent-tint: rgba(13, 165, 142, 0.16);
+  --color-accent-tint-strong: rgba(13, 165, 142, 0.28);
+  --color-accent-ink: #2dd4bf;
+  --color-accent-glow: rgba(13, 165, 142, 0.35);
+
+  /* Semantics */
+  --color-ok: #10b981;
+  --color-ok-tint: rgba(16, 185, 129, 0.18);
+  --color-ok-ink: #34d399;
+  --color-warn: #f59e0b;
+  --color-warn-tint: rgba(245, 158, 11, 0.18);
+  --color-warn-ink: #fbbf24;
+  --color-danger: #ef4444;
+  --color-danger-tint: rgba(239, 68, 68, 0.18);
+  --color-danger-ink: #f87171;
+
+  /* Night ramp mirrors dark theme */
+  --color-night-0: #0b0f19;
+  --color-night-1: #131c2e;
+  --color-night-2: #1a263c;
+  --color-night-line: rgba(255, 255, 255, 0.08);
+  --color-night-ink: #f8fafc;
+  --color-night-ink-soft: #94a3b8;
+  --color-night-accent: #2dd4bf;
+}
 
 @theme {
-  --font-sans: -apple-system, "SF Pro Text", system-ui, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
-  /* editorial serif — the wordmark and hero headlines only; everything
-     functional (forms, data, nav) stays on --font-sans */
-  --font-serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
+  --font-sans: var(--font-sans), var(--font-rounded), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-rounded: var(--font-rounded), -apple-system, sans-serif;
+  --font-serif: var(--font-serif), Georgia, serif;
 
-  /* neutral ramp — warm gray, light theme */
-  --color-surface-0: oklch(0.97 0.01 90);     /* page */
-  --color-surface-1: oklch(0.99 0.005 90);    /* raised card */
-  --color-surface-2: oklch(0.95 0.01 90);     /* inset: inputs, wells */
-  --color-surface-3: oklch(0.92 0.01 90);     /* pressed / hover of inset */
-  --color-line: oklch(0.88 0.01 90);          /* hairline, use sparingly */
+  --color-surface-0: var(--color-surface-0);
+  --color-surface-1: var(--color-surface-1);
+  --color-surface-2: var(--color-surface-2);
+  --color-surface-3: var(--color-surface-3);
+  --color-line: var(--color-line);
+  --color-line-focus: var(--color-line-focus);
 
-  --color-ink: oklch(0.22 0.015 285);         /* primary text */
-  --color-ink-soft: oklch(0.45 0.015 285);    /* secondary text */
-  --color-ink-faint: oklch(0.62 0.015 285);   /* placeholders, meta */
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-faint: var(--color-ink-faint);
 
-  /* accent — complex premium purple */
-  --color-accent: oklch(0.45 0.25 290);
-  --color-accent-strong: oklch(0.40 0.25 290);      /* hover */
-  --color-accent-tint: oklch(0.95 0.05 290);        /* tonal button / chip bg */
-  --color-accent-tint-strong: oklch(0.92 0.06 290); /* tonal hover */
-  --color-accent-ink: oklch(0.35 0.2 290);          /* text on tint */
+  --color-accent: var(--color-accent);
+  --color-accent-strong: var(--color-accent-strong);
+  --color-accent-tint: var(--color-accent-tint);
+  --color-accent-tint-strong: var(--color-accent-tint-strong);
+  --color-accent-ink: var(--color-accent-ink);
+  --color-accent-glow: var(--color-accent-glow);
 
-  /* semantic */
-  --color-ok: oklch(0.56 0.14 155);
-  --color-ok-tint: oklch(0.94 0.045 155);
-  --color-ok-ink: oklch(0.42 0.12 155);
-  --color-warn: oklch(0.68 0.15 70);
-  --color-warn-tint: oklch(0.95 0.055 80);
-  --color-warn-ink: oklch(0.5 0.13 65);
-  --color-danger: oklch(0.55 0.19 25);
-  --color-danger-tint: oklch(0.94 0.04 25);
+  --color-ok: var(--color-ok);
+  --color-ok-tint: var(--color-ok-tint);
+  --color-ok-ink: var(--color-ok-ink);
+  --color-warn: var(--color-warn);
+  --color-warn-tint: var(--color-warn-tint);
+  --color-warn-ink: var(--color-warn-ink);
+  --color-danger: var(--color-danger);
+  --color-danger-tint: var(--color-danger-tint);
+  --color-danger-ink: var(--color-danger-ink);
 
-  /* dark ramp — the live board */
-  --color-night-0: oklch(0.185 0.012 285);    /* page */
-  --color-night-1: oklch(0.235 0.014 285);    /* card */
-  --color-night-2: oklch(0.285 0.016 285);    /* inset / hover */
-  --color-night-line: oklch(0.33 0.016 285);
-  --color-night-ink: oklch(0.94 0.005 285);
-  --color-night-ink-soft: oklch(0.72 0.01 285);
-  --color-night-accent: oklch(0.72 0.14 277); /* accent lifted for dark bg */
+  --color-night-0: var(--color-night-0);
+  --color-night-1: var(--color-night-1);
+  --color-night-2: var(--color-night-2);
+  --color-night-line: var(--color-night-line);
+  --color-night-ink: var(--color-night-ink);
+  --color-night-ink-soft: var(--color-night-ink-soft);
+  --color-night-accent: var(--color-night-accent);
 
   --radius-md: 0.625rem;
   --radius-lg: 0.875rem;
-  --radius-xl: 1.25rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 }
 
 html {
   background-color: var(--color-surface-0);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
   color: var(--color-ink);
 }
 
@@ -75,23 +149,62 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Single focus treatment app-wide: accent ring */
+/* Single focus treatment app-wide: accent ring with subtle glow */
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 ::selection {
   background: var(--color-accent-tint-strong);
+  color: var(--color-ink);
 }
 
-/* native date/time inputs: keep them on the correct color scheme per surface */
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(19, 28, 46, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-line);
+}
+
+:root:not(.dark) .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-line);
+}
+
+/* Glowing accent button / element */
+.glow-accent {
+  box-shadow: 0 0 24px var(--color-accent-glow);
+}
+
+/* Native date/time inputs */
 input[type="date"],
 input[type="time"] {
   color-scheme: light;
 }
 
+.dark input[type="date"],
+.dark input[type="time"],
 .board-dark input[type="time"] {
   color-scheme: dark;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-faint);
 }

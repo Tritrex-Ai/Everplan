@@ -5,6 +5,7 @@ import { Badge, EmptyState } from "@/components/ui";
 import { FormattedDate } from "@/components/FormattedTime";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { AccountMenu } from "@/components/AccountMenu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Wordmark } from "@/components/Wordmark";
 import { Location01Icon, Calendar01Icon } from "hugeicons-react";
 import type { EventRow } from "@/lib/types";
@@ -36,13 +37,16 @@ export default async function EventsPage() {
   const bgPlaceholder = "bg-surface-2";
 
   return (
-    <div className="flex min-h-dvh bg-surface-0/50">
+    <div className="flex min-h-dvh bg-surface-0">
       <DashboardSidebar fullName={fullName} email={email} />
 
       <main className="flex-1 px-5 py-6 sm:px-8 sm:py-10 overflow-y-auto">
         <div className="mb-6 flex items-center justify-between lg:hidden">
           <Wordmark />
-          <AccountMenu fullName={fullName} email={email} compact />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AccountMenu fullName={fullName} email={email} compact />
+          </div>
         </div>
 
         <header className="mb-10 flex items-center justify-between gap-3">
@@ -76,17 +80,15 @@ export default async function EventsPage() {
             {list.map((event, index) => {
               const isOwner = event.owner_id === user?.id;
               return (
-                <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-[20px] bg-surface-1 border border-black/[0.04] transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)]">
+                <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface-1 border border-line transition-all duration-200 hover:border-accent/40 hover:shadow-xl">
                   <Link href={`/events/${event.id}`} className="absolute inset-0 z-10">
                     <span className="sr-only">View event {event.title}</span>
                   </Link>
                   
-                  {/* Card Header (Image Placeholder) */}
-                  <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-accent/20 via-[#FDFBF7] to-[#FFE5D9] flex flex-col justify-end p-4">
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]"></div>
-                    
+                  {/* Card Header */}
+                  <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-accent/25 via-surface-2 to-surface-1 flex flex-col justify-end p-4 border-b border-line/60">
                     <div className="relative z-10 flex justify-start items-center gap-2">
-                      <span className="inline-flex rounded-full bg-white/40 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-white/40 shadow-sm">
+                      <span className="inline-flex rounded-full bg-surface-1/80 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-line shadow-sm">
                         {event.event_type || "Event"}
                       </span>
                       {!isOwner && (

@@ -21,7 +21,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
 import { blockTimes, durationLabel, toTimeInput } from "@/lib/time";
 import { FormattedTime } from "@/components/FormattedTime";
-import { Button, EmptyState, Field, Input, Modal, Textarea } from "@/components/ui";
+import { Button, EmptyState, Field, Input, Modal, Textarea, FloatingActionButton } from "@/components/ui";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   StarsIcon,
@@ -36,6 +36,9 @@ import {
   BookmarkAdd01Icon,
   Copy01Icon,
   Delete02Icon,
+  Add01Icon,
+  Search01Icon,
+  Clock01Icon,
 } from "hugeicons-react";
 import type { BlockRow, EventRow, TemplateRow, TemplateBlockRow } from "@/lib/types";
 
@@ -80,6 +83,16 @@ function BlockIcon({ title, className }: { title: string; className?: string }) 
   return <SquareIcon size={20} className={className} />;
 }
 
+function getBlockColor(title: string) {
+  const t = title.toLowerCase();
+  if (t.includes("ceremony") || t.includes("vow")) return { dot: "bg-amber-400", border: "border-l-amber-400 text-amber-500" };
+  if (t.includes("hair") || t.includes("prep") || t.includes("makeup")) return { dot: "bg-emerald-400", border: "border-l-emerald-400 text-emerald-500" };
+  if (t.includes("photo") || t.includes("portrait") || t.includes("shot")) return { dot: "bg-purple-400", border: "border-l-purple-400 text-purple-400" };
+  if (t.includes("dance") || t.includes("party") || t.includes("dj")) return { dot: "bg-rose-400", border: "border-l-rose-400 text-rose-400" };
+  if (t.includes("dinner") || t.includes("cake") || t.includes("cocktail")) return { dot: "bg-cyan-400", border: "border-l-cyan-400 text-cyan-400" };
+  return { dot: "bg-accent", border: "border-l-accent text-accent" };
+}
+
 export function TimelineEditor({
   event,
   initialBlocks,
@@ -93,6 +106,7 @@ export function TimelineEditor({
   const [blocks, setBlocks] = useState(
     [...initialBlocks].sort((a, b) => a.position - b.position)
   );
+  const [searchQuery, setSearchQuery] = useState("");
   const [draft, setDraft] = useState<BlockDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -410,52 +424,119 @@ export function TimelineEditor({
     }
   }
 
+  const filteredBlocks = searchQuery.trim()
+    ? blocks.filter(
+        (b) =>
+          b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (b.location && b.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (b.notes && b.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : blocks;
+
   return (
-    <section>
+    <section className="relative pb-12">
       {error && (
-        <p className="mb-4 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+        <p className="mb-4 rounded-xl bg-danger-tint border border-danger/20 px-3.5 py-2.5 text-[13px] text-danger">
           {error}
         </p>
       )}
-      {isOwner && (
-        <div className="mb-4">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button onClick={() => setDraft(EMPTY_DRAFT)} className="w-full sm:flex-1">
-              + Add block
-            </Button>
-            <Link
-              href={`/events/${event.id}/generate`}
-              className="group flex h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-accent to-amber-500/80 px-4 text-[15px] font-bold text-white shadow-md hover:shadow-lg hover:from-accent-strong hover:to-amber-500 transition-all"
-            >
-              <StarsIcon size={18} className="transition-transform group-hover:scale-110 group-hover:rotate-12" /> AI Timeline Builder
-            </Link>
-          </div>
-          <div className="mt-2 flex items-center justify-end gap-4">
-            {blocks.length > 0 && (
+
+      {/* Top Search & Actions Bar */}
+      <div className="mb-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search01Icon
+              size={18}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search timeline events…"
+              className="h-11 w-full rounded-xl bg-surface-2/70 border border-line pl-10 pr-12 text-[14px] text-ink placeholder:text-ink-faint focus:border-accent focus:bg-surface-1 focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+            />
+            {searchQuery && (
               <button
-                onClick={() => setSaveTemplateOpen(true)}
-                className="flex items-center gap-1 text-[12.5px] font-medium text-ink-faint hover:text-accent-ink"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-faint hover:text-ink px-1.5 py-0.5 rounded bg-surface-3"
               >
-                <BookmarkAdd01Icon size={13} /> Save as template
+                Clear
               </button>
             )}
-            <button
-              onClick={openApplyTemplate}
-              className="flex items-center gap-1 text-[12.5px] font-medium text-ink-faint hover:text-accent-ink"
-            >
-              <Copy01Icon size={13} /> Use a template
-            </button>
           </div>
+          <Link
+            href={`/events/${event.id}/generate`}
+            title="AI Timeline Builder"
+            className="flex h-11 items-center gap-1.5 px-3.5 rounded-xl bg-accent-tint text-accent-ink border border-accent/30 font-semibold text-[13.5px] hover:bg-accent-tint-strong hover:border-accent transition-all shrink-0"
+          >
+            <StarsIcon size={17} className="text-accent" />
+            <span className="hidden sm:inline">AI Builder</span>
+            <span className="sm:hidden">AI</span>
+          </Link>
         </div>
-      )}
+
+        {isOwner && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setDraft(EMPTY_DRAFT)} size="sm">
+                <Add01Icon size={16} /> Add block
+              </Button>
+            </div>
+            <div className="flex items-center gap-3">
+              {blocks.length > 0 && (
+                <button
+                  onClick={() => setSaveTemplateOpen(true)}
+                  className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-accent transition-colors"
+                >
+                  <BookmarkAdd01Icon size={14} /> Save as template
+                </button>
+              )}
+              <button
+                onClick={openApplyTemplate}
+                className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink-faint hover:text-accent transition-colors"
+              >
+                <Copy01Icon size={14} /> Use a template
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {blocks.length === 0 ? (
         <EmptyState
-          title="No timeline yet"
+          icon={<Clock01Icon size={30} className="text-accent" />}
+          title="No timeline events yet"
           body={
             isOwner
-              ? "Add blocks by hand, or describe the day and let the AI builder draft it for you."
+              ? "Tap + to add your first event, or let the AI builder draft the entire wedding day in seconds."
               : "The photographer hasn't built the timeline yet."
+          }
+          action={
+            isOwner ? (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={() => setDraft(EMPTY_DRAFT)}>
+                  <Add01Icon size={18} /> Add block
+                </Button>
+                <Link
+                  href={`/events/${event.id}/generate`}
+                  className="inline-flex items-center justify-center gap-2 font-medium rounded-xl h-11 px-4 text-[14.5px] bg-gradient-to-r from-purple-600 via-indigo-600 to-accent text-white shadow-md hover:shadow-lg transition-all"
+                >
+                  <StarsIcon size={18} /> Generate with AI
+                </Link>
+              </div>
+            ) : null
+          }
+        />
+      ) : filteredBlocks.length === 0 ? (
+        <EmptyState
+          icon={<Search01Icon size={30} className="text-ink-faint" />}
+          title="No events found"
+          body={`No timeline blocks found matching “${searchQuery}”.`}
+          action={
+            <Button variant="tonal" onClick={() => setSearchQuery("")}>
+              Clear search
+            </Button>
           }
         />
       ) : (
@@ -466,19 +547,19 @@ export function TimelineEditor({
           onDragEnd={onDragEnd}
         >
           <SortableContext
-            items={blocks.map((b) => b.id)}
+            items={filteredBlocks.map((b) => b.id)}
             strategy={verticalListSortingStrategy}
           >
             <motion.ul
-              className="relative space-y-2"
+              className="relative space-y-2.5"
               initial="hidden"
               animate="show"
               variants={{
-                show: { transition: { staggerChildren: 0.05 } }
+                show: { transition: { staggerChildren: 0.04 } }
               }}
             >
               <AnimatePresence mode="popLayout">
-                {blocks.map((block) => (
+                {filteredBlocks.map((block) => (
                   <SortableBlock
                     key={block.id}
                     block={block}
@@ -500,6 +581,15 @@ export function TimelineEditor({
             </motion.ul>
           </SortableContext>
         </DndContext>
+      )}
+
+      {/* Floating Action Button for mobile */}
+      {isOwner && (
+        <FloatingActionButton
+          onClick={() => setDraft(EMPTY_DRAFT)}
+          icon={<Add01Icon size={22} />}
+          label="Add block"
+        />
       )}
 
       <Modal
@@ -672,6 +762,7 @@ function SortableBlock({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id, disabled: !canEdit });
+  const colorInfo = getBlockColor(block.title);
 
   return (
     <motion.li
@@ -682,12 +773,15 @@ function SortableBlock({
         show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
       }}
       layout="position"
-      whileHover={isDragging ? {} : { scale: 1.01 }}
-      whileDrag={{ scale: 1.03 }}
-      className={`group relative z-[1] flex items-stretch rounded-lg bg-surface-1 ring-1 ring-line/50 transition-colors ${
-        isDragging ? "z-10 bg-surface-0 ring-accent" : ""
+      whileHover={isDragging ? {} : { scale: 1.008 }}
+      whileDrag={{ scale: 1.02 }}
+      className={`group relative z-[1] flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 shadow-sm transition-all overflow-hidden ${
+        isDragging ? "z-10 bg-surface-2 ring-2 ring-accent shadow-xl" : ""
       }`}
     >
+      {/* Category Left Rail Indicator */}
+      <div className={`w-1.5 shrink-0 ${colorInfo.dot}`} />
+
       {canEdit && (
         <button
           {...attributes}
@@ -700,19 +794,19 @@ function SortableBlock({
       )}
       <button
         onClick={canEdit ? onEdit : undefined}
-        className={`flex min-w-0 flex-1 items-center gap-3 py-2.5 pr-3 text-left ${
+        className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left ${
           canEdit ? "" : "pl-4"
         }`}
       >
-        <div className="shrink-0 flex items-center justify-center h-9 w-9 rounded-full bg-surface-2 text-ink-soft group-hover:bg-accent-tint group-hover:text-accent transition-colors">
+        <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-surface-2 text-ink-soft group-hover:bg-accent-tint group-hover:text-accent transition-colors border border-line">
           <BlockIcon title={block.title} className="transition-colors" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <span className="shrink-0 font-mono text-[13px] font-medium text-accent-ink">
+            <span className="shrink-0 font-mono text-[13px] font-semibold text-accent-ink">
               <FormattedTime iso={block.start_time} />
             </span>
-            <span className="truncate text-[15px] font-semibold">{block.title}</span>
+            <span className="truncate text-[15px] font-semibold text-ink">{block.title}</span>
           </div>
           {(block.location || block.notes) && (
             <p className="mt-0.5 truncate text-[13px] text-ink-soft">
@@ -721,8 +815,8 @@ function SortableBlock({
           )}
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-1.5 pr-3">
-        <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[12px] font-medium text-ink-soft">
+      <div className="flex shrink-0 items-center gap-2 pr-3">
+        <span className="rounded-full bg-surface-2 border border-line px-2.5 py-0.5 text-[12px] font-medium text-ink-soft">
           {durationLabel(block.start_time, block.end_time)}
         </span>
         {canEdit && (
@@ -736,8 +830,8 @@ function SortableBlock({
             }
             className={`flex shrink-0 items-center justify-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
               block.guest_visible
-                ? "bg-ok-tint text-ok-ink hover:bg-ok-tint/80"
-                : "bg-surface-2 text-ink-faint hover:bg-surface-3"
+                ? "bg-ok-tint text-ok-ink hover:bg-ok-tint/80 border border-ok/20"
+                : "bg-surface-2 text-ink-faint hover:bg-surface-3 border border-line"
             }`}
           >
             {block.guest_visible ? "Visible" : "Hidden"}
