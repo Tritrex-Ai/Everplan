@@ -12,6 +12,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { Select } from "@/components/ui";
 import { downloadIcs } from "@/lib/ics";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar01Icon,
   CalendarAdd01Icon,
@@ -210,45 +211,53 @@ export function EventWorkspaceChrome({
         >
           <MoreHorizontalIcon size={18} />
         </button>
-        {moreOpen && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl bg-surface-1 p-1.5 outline outline-1 outline-line/60">
-            <button
-              onClick={() => { setMoreOpen(false); setGuestLinkOpen(true); }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
+        <AnimatePresence>
+          {moreOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 6 }}
+              transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl bg-surface-1/95 p-1.5 shadow-2xl backdrop-blur-xl border border-line/80"
             >
-              <Link01Icon size={17} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
-            </button>
-            <Link
-              href={`${base}/edit`}
-              onClick={() => setMoreOpen(false)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
-            >
-              <Edit01Icon size={17} className="text-ink-soft" /> Edit event
-            </Link>
-            <button
-              onClick={() => { setMoreOpen(false); exportCalendar(); }}
-              disabled={icsBusy}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2 disabled:opacity-60"
-            >
-              <CalendarAdd01Icon size={17} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
-            </button>
-            <Link
-              href={`${base}/print`}
-              target="_blank"
-              onClick={() => setMoreOpen(false)}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-ink hover:bg-surface-2"
-            >
-              <PrinterIcon size={17} className="text-ink-soft" /> Export as PDF
-            </Link>
-            <div className="my-1 h-px bg-line/60" />
-            <button
-              onClick={() => { setMoreOpen(false); deleteEvent(); }}
-              className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] font-medium text-danger hover:bg-danger hover:text-white"
-            >
-              <Delete02Icon size={17} /> Delete event
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => { setMoreOpen(false); setGuestLinkOpen(true); }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink transition-colors hover:bg-surface-2"
+              >
+                <Link01Icon size={17} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
+              </button>
+              <Link
+                href={`${base}/edit`}
+                onClick={() => setMoreOpen(false)}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink transition-colors hover:bg-surface-2"
+              >
+                <Edit01Icon size={17} className="text-ink-soft" /> Edit event
+              </Link>
+              <button
+                onClick={() => { setMoreOpen(false); exportCalendar(); }}
+                disabled={icsBusy}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink transition-colors hover:bg-surface-2 disabled:opacity-60"
+              >
+                <CalendarAdd01Icon size={17} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
+              </button>
+              <Link
+                href={`${base}/print`}
+                target="_blank"
+                onClick={() => setMoreOpen(false)}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink transition-colors hover:bg-surface-2"
+              >
+                <PrinterIcon size={17} className="text-ink-soft" /> Export as PDF
+              </Link>
+              <div className="my-1.5 h-px bg-line/60" />
+              <button
+                onClick={() => { setMoreOpen(false); deleteEvent(); }}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-danger transition-colors hover:bg-danger hover:text-white"
+              >
+                <Delete02Icon size={17} /> Delete event
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   ) : null;
@@ -276,7 +285,7 @@ export function EventWorkspaceChrome({
         </Link>
         <div className="mb-6 flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h1 className="truncate font-sans text-[13px] font-bold tracking-widest uppercase text-ink mt-1">
+            <h1 className="truncate font-sans text-[16px] font-bold text-ink mt-1">
               {event.title}
             </h1>
             <p className="mt-0.5 text-[13px] text-ink-soft">
@@ -316,7 +325,7 @@ export function EventWorkspaceChrome({
             <Link href="/events" className="text-[13.5px] text-ink-soft hover:text-ink">
               ← My events
             </Link>
-            <h1 className="mt-2 truncate font-sans text-[13px] font-bold tracking-widest uppercase text-ink">
+            <h1 className="mt-2 truncate font-sans text-[17px] font-bold text-ink">
               {event.title}
             </h1>
             <p className="mt-0.5 text-[13.5px] text-ink-soft">
@@ -396,62 +405,68 @@ export function EventWorkspaceChrome({
         onTokenChange={setGuestToken}
       />
       {/* Mobile Options Bottom Sheet */}
-      {optionsOpen && isOwner && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOptionsOpen(false)}>
-          <div 
-            className="w-full rounded-t-[28px] bg-surface-1 border-t border-line p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ink-faint/30" />
-            <div className="mb-5 flex items-center justify-between">
-              <h3 className="text-[17px] font-semibold text-ink">Event Options</h3>
-              <button onClick={() => setOptionsOpen(false)} className="text-[14px] font-medium text-ink-soft hover:text-ink">Cancel</button>
-            </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => { setOptionsOpen(false); setInviteOpen(true); }}
-                className="flex w-full items-center gap-3 rounded-xl bg-accent px-4 py-3.5 text-[15px] font-semibold text-white hover:bg-accent-strong"
-              >
-                <UserAdd01Icon size={20} /> Invite team
-              </button>
-              <button
-                onClick={() => { setOptionsOpen(false); setGuestLinkOpen(true); }}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
-              >
-                <Link01Icon size={20} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
-              </button>
-              <Link
-                href={`${base}/edit`}
-                onClick={() => setOptionsOpen(false)}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
-              >
-                <Edit01Icon size={20} className="text-ink-soft" /> Edit event
-              </Link>
-              <button
-                onClick={() => { setOptionsOpen(false); exportCalendar(); }}
-                disabled={icsBusy}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line disabled:opacity-60"
-              >
-                <CalendarAdd01Icon size={20} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
-              </button>
-              <Link
-                href={`${base}/print`}
-                target="_blank"
-                onClick={() => setOptionsOpen(false)}
-                className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
-              >
-                <PrinterIcon size={20} className="text-ink-soft" /> Export as PDF
-              </Link>
-              <button
-                onClick={() => { setOptionsOpen(false); deleteEvent(); }}
-                className="flex w-full items-center gap-3 rounded-xl bg-danger-tint px-4 py-3.5 text-[15px] font-medium text-danger hover:bg-danger hover:text-white border border-danger/20"
-              >
-                <Delete02Icon size={20} /> Delete event
-              </button>
-            </div>
+      <AnimatePresence>
+        {optionsOpen && isOwner && (
+          <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOptionsOpen(false)}>
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="w-full rounded-t-[28px] bg-surface-1 border-t border-line p-5 pb-8 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ink-faint/30" />
+              <div className="mb-5 flex items-center justify-between">
+                <h3 className="text-[17px] font-semibold text-ink">Event Options</h3>
+                <button onClick={() => setOptionsOpen(false)} className="text-[14px] font-medium text-ink-soft hover:text-ink">Cancel</button>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => { setOptionsOpen(false); setInviteOpen(true); }}
+                  className="flex w-full items-center gap-3 rounded-xl bg-accent px-4 py-3.5 text-[15px] font-semibold text-white hover:bg-accent-strong"
+                >
+                  <UserAdd01Icon size={20} /> Invite team
+                </button>
+                <button
+                  onClick={() => { setOptionsOpen(false); setGuestLinkOpen(true); }}
+                  className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
+                >
+                  <Link01Icon size={20} className="text-ink-soft" /> Guest link{guestToken ? " (On)" : ""}
+                </button>
+                <Link
+                  href={`${base}/edit`}
+                  onClick={() => setOptionsOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
+                >
+                  <Edit01Icon size={20} className="text-ink-soft" /> Edit event
+                </Link>
+                <button
+                  onClick={() => { setOptionsOpen(false); exportCalendar(); }}
+                  disabled={icsBusy}
+                  className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line disabled:opacity-60"
+                >
+                  <CalendarAdd01Icon size={20} className="text-ink-soft" /> {icsBusy ? "Exporting…" : "Add to calendar"}
+                </button>
+                <Link
+                  href={`${base}/print`}
+                  target="_blank"
+                  onClick={() => setOptionsOpen(false)}
+                  className="flex w-full items-center gap-3 rounded-xl bg-surface-2 px-4 py-3.5 text-[15px] font-medium text-ink hover:bg-surface-3 border border-line"
+                >
+                  <PrinterIcon size={20} className="text-ink-soft" /> Export as PDF
+                </Link>
+                <button
+                  onClick={() => { setOptionsOpen(false); deleteEvent(); }}
+                  className="flex w-full items-center gap-3 rounded-xl bg-danger-tint px-4 py-3.5 text-[15px] font-medium text-danger hover:bg-danger hover:text-white border border-danger/20"
+                >
+                  <Delete02Icon size={20} /> Delete event
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

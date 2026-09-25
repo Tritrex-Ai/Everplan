@@ -1,30 +1,29 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Everplan Modernized Design System (Inspired by Coordon + Pro Creative Tools)
-   Dual Theme Architecture: Midnight Dark & Crisp Light
+   Everplan Modernized Design System (Signature Royal Purple + Midnight Dark)
    --------------------------------------------------------------------------- */
 
 :root {
-  /* LIGHT THEME (Crisp Porcelain + Emerald Accent) */
+  /* LIGHT THEME (Crisp Porcelain + Royal Purple Accent) */
   --color-surface-0: #f8fafc;        /* page background */
   --color-surface-1: #ffffff;        /* elevated card */
   --color-surface-2: #f1f5f9;        /* insets, search, inputs */
   --color-surface-3: #e2e8f0;        /* hover / pressed */
   --color-line: #e2e8f0;             /* hairline border */
-  --color-line-focus: #0da58e;
+  --color-line-focus: #7c3aed;
 
   --color-ink: #0f172a;             /* slate-900 primary text */
   --color-ink-soft: #475569;        /* slate-600 secondary text */
   --color-ink-faint: #94a3b8;       /* slate-400 placeholder/meta */
 
-  /* Coordon signature emerald / teal accent */
-  --color-accent: #0da58e;
-  --color-accent-strong: #0b8f7b;
-  --color-accent-tint: rgba(13, 165, 142, 0.10);
-  --color-accent-tint-strong: rgba(13, 165, 142, 0.18);
-  --color-accent-ink: #097262;
-  --color-accent-glow: rgba(13, 165, 142, 0.22);
+  /* Signature Royal Purple Accent */
+  --color-accent: #7c3aed;
+  --color-accent-strong: #6d28d9;
+  --color-accent-tint: rgba(124, 58, 237, 0.10);
+  --color-accent-tint-strong: rgba(124, 58, 237, 0.18);
+  --color-accent-ink: #6d28d9;
+  --color-accent-glow: rgba(124, 58, 237, 0.28);
 
   /* Semantics */
   --color-ok: #10b981;
@@ -44,30 +43,30 @@
   --color-night-line: rgba(255, 255, 255, 0.08);
   --color-night-ink: #f8fafc;
   --color-night-ink-soft: #94a3b8;
-  --color-night-accent: #2dd4bf;
+  --color-night-accent: #a78bfa;
 }
 
 .dark,
 [data-theme="dark"] {
-  /* DARK THEME (Midnight Obsidian + Electric Emerald) */
+  /* DARK THEME (Midnight Obsidian + Luminous Purple) */
   --color-surface-0: #0b0f19;        /* midnight canvas */
   --color-surface-1: #131c2e;        /* rich navy card */
   --color-surface-2: #1a263c;        /* inset input / well */
   --color-surface-3: #22324f;        /* hover / active */
   --color-line: rgba(255, 255, 255, 0.08); /* crisp translucent border */
-  --color-line-focus: #0da58e;
+  --color-line-focus: #8b5cf6;
 
   --color-ink: #f8fafc;             /* crisp white text */
   --color-ink-soft: #94a3b8;        /* slate-400 secondary text */
   --color-ink-faint: #64748b;       /* slate-500 placeholder/meta */
 
-  /* Coordon vibrant electric emerald/teal */
-  --color-accent: #0da58e;
-  --color-accent-strong: #10b981;
-  --color-accent-tint: rgba(13, 165, 142, 0.16);
-  --color-accent-tint-strong: rgba(13, 165, 142, 0.28);
-  --color-accent-ink: #2dd4bf;
-  --color-accent-glow: rgba(13, 165, 142, 0.35);
+  /* Vibrant Purple for Dark Mode */
+  --color-accent: #8b5cf6;
+  --color-accent-strong: #7c3aed;
+  --color-accent-tint: rgba(139, 92, 246, 0.16);
+  --color-accent-tint-strong: rgba(139, 92, 246, 0.28);
+  --color-accent-ink: #c4b5fd;
+  --color-accent-glow: rgba(139, 92, 246, 0.38);
 
   /* Semantics */
   --color-ok: #10b981;
@@ -87,7 +86,7 @@
   --color-night-line: rgba(255, 255, 255, 0.08);
   --color-night-ink: #f8fafc;
   --color-night-ink-soft: #94a3b8;
-  --color-night-accent: #2dd4bf;
+  --color-night-accent: #a78bfa;
 }
 
 @theme {

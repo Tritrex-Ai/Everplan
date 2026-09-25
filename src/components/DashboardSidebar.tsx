@@ -17,9 +17,11 @@ const NAV_ITEMS = [
 export function DashboardSidebar({
   fullName,
   email,
+  avatarUrl,
 }: {
   fullName: string | null;
   email: string;
+  avatarUrl?: string | null;
 }) {
   const pathname = usePathname();
 
@@ -51,7 +53,7 @@ export function DashboardSidebar({
 
       <div className="p-4 pt-2 flex flex-col gap-2">
         <ThemeToggle showLabel className="w-full justify-start" />
-        <AccountMenu fullName={fullName} email={email} />
+        <AccountMenu fullName={fullName} email={email} avatarUrl={avatarUrl} />
       </div>
     </aside>
   );

@@ -29,7 +29,7 @@ export function Button({
   };
   const variants = {
     primary:
-      "bg-gradient-to-r from-accent to-emerald-600 text-white shadow-sm hover:shadow-[0_0_20px_var(--color-accent-glow)] hover:brightness-110",
+      "bg-gradient-to-r from-accent to-purple-600 text-white shadow-sm hover:shadow-[0_0_20px_var(--color-accent-glow)] hover:brightness-110",
     tonal:
       "bg-accent-tint text-accent-ink border border-accent/20 hover:bg-accent-tint-strong hover:border-accent/30",
     ghost:
@@ -127,7 +127,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[11.5px] font-semibold uppercase tracking-wider text-ink-faint">
+      <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
         {label}
       </span>
       {children}

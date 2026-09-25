@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { FormattedDate } from "@/components/FormattedTime";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { AccountMenu } from "@/components/AccountMenu";
@@ -32,20 +32,18 @@ export default async function EventsPage() {
   const list = (events ?? []) as EventRow[];
   const fullName = profile?.full_name ?? null;
   const email = user?.email ?? "";
-
-  // Using surface-2 as a neutral image placeholder that fits the color system
-  const bgPlaceholder = "bg-surface-2";
+  const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) ?? null;
 
   return (
     <div className="flex min-h-dvh bg-surface-0">
-      <DashboardSidebar fullName={fullName} email={email} />
+      <DashboardSidebar fullName={fullName} email={email} avatarUrl={avatarUrl} />
 
       <main className="flex-1 px-5 py-6 sm:px-8 sm:py-10 overflow-y-auto">
         <div className="mb-6 flex items-center justify-between lg:hidden">
           <Wordmark />
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <AccountMenu fullName={fullName} email={email} compact />
+            <AccountMenu fullName={fullName} email={email} avatarUrl={avatarUrl} compact />
           </div>
         </div>
 
@@ -77,7 +75,7 @@ export default async function EventsPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {list.map((event, index) => {
+            {list.map((event) => {
               const isOwner = event.owner_id === user?.id;
               return (
                 <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface-1 border border-line transition-all duration-200 hover:border-accent/40 hover:shadow-xl">

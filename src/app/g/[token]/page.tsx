@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GuestLiveBoard } from "@/components/GuestLiveBoard";
 import type { BlockRow } from "@/lib/types";

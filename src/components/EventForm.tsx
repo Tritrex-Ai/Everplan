@@ -152,7 +152,7 @@ export function EventForm({ event }: { event?: EventRow }) {
       </div>
 
       <div>
-        <span className="mb-1.5 block text-[13px] font-medium uppercase tracking-wide text-ink-faint">
+        <span className="mb-1.5 block text-[13px] font-medium text-ink-soft">
           Coverage
         </span>
         <div className="flex gap-2">
