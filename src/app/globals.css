@@ -20,6 +20,7 @@
   /* Signature Royal Purple Accent */
   --color-accent: #7c3aed;
   --color-accent-strong: #6d28d9;
+  --color-accent-2: #4f46e5;         /* indigo companion — AI/generate surfaces only */
   --color-accent-tint: rgba(124, 58, 237, 0.10);
   --color-accent-tint-strong: rgba(124, 58, 237, 0.18);
   --color-accent-ink: #6d28d9;
@@ -63,6 +64,7 @@
   /* Vibrant Purple for Dark Mode */
   --color-accent: #8b5cf6;
   --color-accent-strong: #7c3aed;
+  --color-accent-2: #818cf8;         /* indigo companion — AI/generate surfaces only */
   --color-accent-tint: rgba(139, 92, 246, 0.16);
   --color-accent-tint-strong: rgba(139, 92, 246, 0.28);
   --color-accent-ink: #c4b5fd;
@@ -107,6 +109,7 @@
 
   --color-accent: var(--color-accent);
   --color-accent-strong: var(--color-accent-strong);
+  --color-accent-2: var(--color-accent-2);
   --color-accent-tint: var(--color-accent-tint);
   --color-accent-tint-strong: var(--color-accent-tint-strong);
   --color-accent-ink: var(--color-accent-ink);
@@ -137,6 +140,17 @@
   --radius-3xl: 2rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Scale reference (enforced by convention, not by a Tailwind config — pick
+   from these instead of inventing a one-off value):
+
+   Type   11.5 · 12.5 · 13 · 13.5 · 14.5 · 15 · 17 · 19 · 21 · 28  (px)
+   Radius rounded-xl   → controls: buttons, inputs, chips, small badges
+          rounded-2xl  → cards, list panels, desktop dialogs
+          rounded-3xl  → full bottom sheets (rounded-t-3xl)
+          rounded-full → pills, avatars, dots
+   --------------------------------------------------------------------------- */
+
 html {
   background-color: var(--color-surface-0);
   color: var(--color-ink);
@@ -160,6 +174,17 @@ body {
   color: var(--color-ink);
 }
 
+/* Single tactile press treatment app-wide — flat, no shadow. Inline styles
+   (e.g. framer-motion's whileTap) still win by specificity over this.
+   Excludes .drag-handle: applying a live transform to an element mid-gesture
+   breaks pointer/touch coordinate tracking for drag libraries (dnd-kit),
+   especially in Safari — this silently broke timeline drag-to-reorder. */
+button:not(:disabled):not(.drag-handle):active,
+a[href]:active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+}
+
 /* Glassmorphism utility */
 .glass-panel {
   background: rgba(19, 28, 46, 0.75);
@@ -175,11 +200,6 @@ body {
   border: 1px solid var(--color-line);
 }
 
-/* Glowing accent button / element */
-.glow-accent {
-  box-shadow: 0 0 24px var(--color-accent-glow);
-}
-
 /* Native date/time inputs */
 input[type="date"],
 input[type="time"] {
@@ -190,6 +210,13 @@ input[type="time"] {
 .dark input[type="time"],
 .board-dark input[type="time"] {
   color-scheme: dark;
+}
+
+/* Subtle dot-grid backdrop — for AI/composer surfaces that read as flat
+   otherwise. Theme-aware via currentColor-independent custom property. */
+.bg-grid-dots {
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
 /* Smooth custom scrollbars */
