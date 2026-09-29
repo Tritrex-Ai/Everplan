@@ -4,8 +4,13 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { blockTimes } from "@/lib/time";
-import { Button, Field, Input, Spinner, Textarea } from "@/components/ui";
-import { StarsIcon, Cancel01Icon, Attachment01Icon, File01Icon } from "hugeicons-react";
+import { Button, Input, Spinner } from "@/components/ui";
+import {
+  Cancel01Icon,
+  Attachment01Icon,
+  File01Icon,
+  ArrowUp01Icon,
+} from "hugeicons-react";
 import type { DraftBlock, EventRow } from "@/lib/types";
 
 const EXAMPLE =
@@ -18,6 +23,7 @@ const ACCEPTED_FILE_TYPES = [
   "image/gif",
   "image/webp",
 ];
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 
 type AttachedFile = { name: string; mediaType: string; data: string };
@@ -50,6 +56,7 @@ export function GenerateClient({
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<AttachedFile | null>(null);
   const [fileBusy, setFileBusy] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function attachFile(picked: File | null | undefined) {
@@ -76,6 +83,12 @@ export function GenerateClient({
   function removeFile() {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    attachFile(e.dataTransfer.files?.[0]);
   }
 
   async function generate() {
@@ -162,74 +175,131 @@ export function GenerateClient({
     router.refresh();
   }
 
+  const isImageFile = file && IMAGE_TYPES.has(file.mediaType);
+  const canGenerate = !busy && !fileBusy && (!!file || description.trim().length >= 10);
+
   return (
     <section className="space-y-4">
-      <div className="rounded-xl bg-surface-1 p-5">
-        <Field label="Describe the day (or paste the coordinator's notes)">
-          <Textarea
-            rows={5}
+      {/* Composer — a Gemini/Claude-style single surface: textarea, an
+          attachment preview (thumbnail for images, chip for PDFs), and a
+          bottom toolbar, all inside one rounded card. Drag-and-drop anywhere
+          on it attaches a file the same way the picker button does. */}
+      <div className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-x-8 -top-10 h-40 -z-10 bg-grid-dots opacity-70 [mask-image:radial-gradient(ellipse_55%_100%_at_50%_0%,black,transparent)]"
+        />
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          className={`rounded-3xl border bg-surface-1 transition-colors ${
+            dragOver ? "border-accent bg-accent-tint/20" : "border-line"
+          }`}
+        >
+          <textarea
+            rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={EXAMPLE}
+            placeholder="Describe the wedding day…"
+            className="w-full resize-none rounded-t-3xl bg-transparent px-4 pt-4 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
           />
-        </Field>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ACCEPTED_FILE_TYPES.join(",")}
-          className="hidden"
-          onChange={(e) => attachFile(e.target.files?.[0])}
-        />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPTED_FILE_TYPES.join(",")}
+            className="hidden"
+            onChange={(e) => attachFile(e.target.files?.[0])}
+          />
 
-        {file ? (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2">
-            <File01Icon size={16} className="shrink-0 text-ink-faint" />
-            <span className="min-w-0 flex-1 truncate text-[13px] text-ink-soft">{file.name}</span>
+          {file && (
+            <div className="px-4 pb-1">
+              {isImageFile ? (
+                <div className="relative inline-block">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:${file.mediaType};base64,${file.data}`}
+                    alt={file.name}
+                    className="h-16 w-16 rounded-xl border border-line object-cover"
+                  />
+                  <button
+                    onClick={removeFile}
+                    aria-label="Remove attachment"
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-ink text-white hover:bg-danger"
+                  >
+                    <Cancel01Icon size={11} />
+                  </button>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2">
+                  <File01Icon size={16} className="shrink-0 text-ink-faint" />
+                  <span className="max-w-[12rem] truncate text-[13px] text-ink-soft">{file.name}</span>
+                  <button
+                    onClick={removeFile}
+                    aria-label="Remove attachment"
+                    className="shrink-0 rounded-md p-0.5 text-ink-faint hover:bg-danger-tint hover:text-danger"
+                  >
+                    <Cancel01Icon size={13} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1.5">
+            <div className="flex min-w-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={fileBusy}
+                title="Attach a PDF or photo of the schedule"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-faint hover:bg-surface-2 hover:text-ink disabled:opacity-50"
+              >
+                <Attachment01Icon size={18} />
+              </button>
+              {!description && !file && (
+                <button
+                  type="button"
+                  onClick={() => setDescription(EXAMPLE)}
+                  className="truncate text-[12.5px] text-ink-faint hover:text-accent-ink hover:underline underline-offset-2"
+                >
+                  Try an example
+                </button>
+              )}
+            </div>
             <button
-              onClick={removeFile}
-              aria-label="Remove attachment"
-              className="shrink-0 rounded-md p-1 text-ink-faint hover:bg-danger-tint hover:text-danger"
+              type="button"
+              onClick={generate}
+              disabled={!canGenerate}
+              title={drafts ? "Regenerate" : "Generate timeline"}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-accent to-accent-strong text-white hover:brightness-110 disabled:opacity-40 disabled:pointer-events-none"
             >
-              <Cancel01Icon size={14} />
+              {busy ? <Spinner className="text-white" /> : <ArrowUp01Icon size={18} />}
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={fileBusy}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 py-2.5 text-[13px] text-ink-faint hover:border-accent hover:text-accent-ink"
-          >
-            <Attachment01Icon size={15} />
-            {fileBusy ? "Reading file…" : "Attach a PDF or photo of the schedule (optional)"}
-          </button>
-        )}
+        </div>
 
-        <Button
-          onClick={generate}
-          disabled={busy || fileBusy || (!file && description.trim().length < 10)}
-          className="mt-3 w-full"
-        >
-          {busy ? (
-            <>
-              <Spinner /> Building your timeline…
-            </>
-          ) : drafts ? (
-            <><StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Regenerate</>
-          ) : (
-            <><StarsIcon size={16} className="inline mr-1 -mt-0.5" /> Generate timeline</>
-          )}
-        </Button>
         {error === "MISSING_API_KEY" ? (
-          <div className="mt-4 rounded-lg bg-surface-2 p-4 outline outline-2 outline-accent">
+          <div className="mt-3 rounded-xl bg-surface-2 p-4 outline outline-2 outline-accent">
             <h3 className="font-semibold text-accent-ink">API Key Required</h3>
             <p className="mt-1 text-[13.5px] text-ink-soft">
-              The AI timeline builder requires an Anthropic API key to function. Add <code className="bg-surface-3 px-1 py-0.5 rounded text-[12px] text-ink">ANTHROPIC_API_KEY=sk-ant-...</code> to your <code className="bg-surface-3 px-1 py-0.5 rounded text-[12px] text-ink">.env.local</code> file and restart the server.
+              The AI timeline builder requires an Anthropic API key to function. Add{" "}
+              <code className="rounded bg-surface-3 px-1 py-0.5 text-[12px] text-ink">
+                ANTHROPIC_API_KEY=sk-ant-...
+              </code>{" "}
+              to your{" "}
+              <code className="rounded bg-surface-3 px-1 py-0.5 text-[12px] text-ink">
+                .env.local
+              </code>{" "}
+              file and restart the server.
             </p>
           </div>
         ) : error ? (
-          <p className="mt-3 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+          <p className="mt-3 rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
             {error}
           </p>
         ) : null}
@@ -246,7 +316,7 @@ export function GenerateClient({
 
           <ul className="space-y-2">
             {drafts.map((draft, i) => (
-              <li key={i} className="rounded-lg bg-surface-1 p-3.5">
+              <li key={i} className="rounded-xl bg-surface-1 border border-line p-3.5">
                 <div className="flex items-center gap-2">
                   <Input
                     type="time"
@@ -264,7 +334,7 @@ export function GenerateClient({
                   <button
                     onClick={() => removeDraft(i)}
                     aria-label="Remove block"
-                    className="ml-auto shrink-0 rounded-md px-2 py-1 text-[13px] text-ink-faint hover:bg-danger-tint hover:text-danger"
+                    className="ml-auto shrink-0 rounded-lg px-2 py-1 text-[13px] text-ink-faint hover:bg-danger-tint hover:text-danger"
                   >
                     <Cancel01Icon size={14} />
                   </button>
