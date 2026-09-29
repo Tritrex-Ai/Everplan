@@ -130,35 +130,47 @@ export function TimelineEditor({
     const oldIndex = blocks.findIndex((b) => b.id === active.id);
     const newIndex = blocks.findIndex((b) => b.id === over.id);
 
-    // Clock times stay attached to the slot, not the block — dragging a
-    // block into a new position gives it that slot's start time, same as
-    // reordering entries in a fixed schedule. The block keeps its own
-    // duration; only when it starts moves. Without this, a dragged block
-    // keeps its old time and the list order and the clock times drift
-    // apart from each other.
-    const slotStarts = [...blocks]
-      .sort((a, b) => a.position - b.position)
-      .map((b) => b.start_time);
+    const moved = arrayMove(blocks, oldIndex, newIndex);
+    const draggedIndex = moved.findIndex((b) => b.id === active.id);
+    const dragged = moved[draggedIndex];
+    const ownDurationMs =
+      new Date(dragged.end_time).getTime() - new Date(dragged.start_time).getTime();
 
-    const reordered = arrayMove(blocks, oldIndex, newIndex).map((b, i) => {
-      const ownDurationMs = new Date(b.end_time).getTime() - new Date(b.start_time).getTime();
-      const slotStart = new Date(slotStarts[i]);
-      return {
-        ...b,
-        position: i,
-        start_time: slotStart.toISOString(),
-        end_time: new Date(slotStart.getTime() + ownDurationMs).toISOString(),
-      };
-    });
+    // Only the dragged block's own time changes, to fit its new spot —
+    // every other block keeps exactly the time it already had. This used to
+    // reassign the whole list's times to fixed "slots" on every drag, which
+    // silently changed the time on blocks the user never touched (most
+    // visibly, dragging a newly-added block into place would steal the time
+    // that used to belong to whatever was already in that spot).
+    const prevNeighbor = moved[draggedIndex - 1];
+    const nextNeighbor = moved[draggedIndex + 1];
+    const newStart = prevNeighbor
+      ? new Date(prevNeighbor.end_time)
+      : nextNeighbor
+        ? new Date(new Date(nextNeighbor.start_time).getTime() - ownDurationMs)
+        : new Date(dragged.start_time);
+
+    const reordered = moved.map((b, i) =>
+      b.id === dragged.id
+        ? {
+            ...b,
+            position: i,
+            start_time: newStart.toISOString(),
+            end_time: new Date(newStart.getTime() + ownDurationMs).toISOString(),
+          }
+        : { ...b, position: i }
+    );
     setError(null);
     setBlocks(reordered);
 
     const results = await Promise.all(
       reordered.map((b) =>
-        supabase
-          .from("blocks")
-          .update({ position: b.position, start_time: b.start_time, end_time: b.end_time })
-          .eq("id", b.id)
+        b.id === dragged.id
+          ? supabase
+              .from("blocks")
+              .update({ position: b.position, start_time: b.start_time, end_time: b.end_time })
+              .eq("id", b.id)
+          : supabase.from("blocks").update({ position: b.position }).eq("id", b.id)
       )
     );
     if (results.some((r) => r.error)) {
@@ -181,10 +193,43 @@ export function TimelineEditor({
       notes: draft.notes || null,
     };
 
+    // Figure out where this block's time places it among the others, and
+    // renumber positions to match — so adding or retiming a block puts it
+    // in the right chronological spot immediately, instead of always
+    // appending to the bottom (or leaving an edited block out of order
+    // until the next drag).
+    const others = blocks
+      .filter((b) => b.id !== draft.id)
+      .sort((a, b) => a.position - b.position);
+    const startMs = new Date(times.start_time).getTime();
+    const insertAt = others.findIndex((b) => new Date(b.start_time).getTime() > startMs);
+    const position = insertAt === -1 ? others.length : insertAt;
+
+    const reindexed = others.map((b, i) => ({ ...b, position: i < position ? i : i + 1 }));
+    const toShift = reindexed.filter((b, i) => b.position !== others[i].position);
+
+    if (toShift.length > 0) {
+      const shiftResults = await Promise.all(
+        toShift.map((b) => supabase.from("blocks").update({ position: b.position }).eq("id", b.id))
+      );
+      if (shiftResults.some((r) => r.error)) {
+        setError("Couldn't make room for this block — please try again.");
+        setBusy(false);
+        return;
+      }
+    }
+
+    function applyShift(prev: BlockRow[]) {
+      return prev.map((b) => {
+        const shifted = toShift.find((s) => s.id === b.id);
+        return shifted ? { ...b, position: shifted.position } : b;
+      });
+    }
+
     if (draft.id) {
       const { data, error: saveError } = await supabase
         .from("blocks")
-        .update(payload)
+        .update({ ...payload, position })
         .eq("id", draft.id)
         .select("*")
         .single();
@@ -193,11 +238,11 @@ export function TimelineEditor({
         setBusy(false);
         return;
       }
-      setBlocks((prev) => prev.map((b) => (b.id === draft.id ? (data as BlockRow) : b)));
+      setBlocks((prev) => applyShift(prev).map((b) => (b.id === draft.id ? (data as BlockRow) : b)));
     } else {
       const { data, error: saveError } = await supabase
         .from("blocks")
-        .insert({ ...payload, event_id: event.id, position: blocks.length })
+        .insert({ ...payload, event_id: event.id, position })
         .select("*")
         .single();
       if (saveError || !data) {
@@ -205,7 +250,7 @@ export function TimelineEditor({
         setBusy(false);
         return;
       }
-      setBlocks((prev) => [...prev, data as BlockRow]);
+      setBlocks((prev) => [...applyShift(prev), data as BlockRow]);
     }
 
     setBusy(false);
