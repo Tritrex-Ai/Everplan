@@ -20,19 +20,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
 import { blockTimes, durationLabel, toTimeInput } from "@/lib/time";
+import { BlockIcon, getBlockColor } from "@/lib/blockColor";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Button, EmptyState, Field, Input, Modal, Textarea, FloatingActionButton } from "@/components/ui";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   StarsIcon,
   DragDropVerticalIcon,
-  Scissor01Icon,
-  Diamond01Icon,
-  UserGroupIcon,
-  Camera01Icon,
-  Activity01Icon,
-  Home01Icon,
-  SquareIcon,
   BookmarkAdd01Icon,
   Copy01Icon,
   Delete02Icon,
@@ -60,38 +54,6 @@ const EMPTY_DRAFT: BlockDraft = {
   location: "",
   notes: "",
 };
-
-// Each branch renders its own statically-named icon tag rather than
-// selecting a component reference into a variable — the latter trips the
-// "no components created during render" lint rule, since static analysis
-// can't tell a fixed set of hoisted icon components from a dynamically
-// created one.
-function BlockIcon({ title, className }: { title: string; className?: string }) {
-  const t = title.toLowerCase();
-  if (t.includes("hair") || t.includes("makeup") || t.includes("prep"))
-    return <Scissor01Icon size={20} className={className} />;
-  if (t.includes("dress") || t.includes("ring") || t.includes("detail"))
-    return <Diamond01Icon size={20} className={className} />;
-  if (t.includes("family") || t.includes("party") || t.includes("group"))
-    return <UserGroupIcon size={20} className={className} />;
-  if (t.includes("photo") || t.includes("portrait") || t.includes("shot"))
-    return <Camera01Icon size={20} className={className} />;
-  if (t.includes("ceremony") || t.includes("venue") || t.includes("arrive"))
-    return <Home01Icon size={20} className={className} />;
-  if (t.includes("dance") || t.includes("party") || t.includes("cocktail"))
-    return <Activity01Icon size={20} className={className} />;
-  return <SquareIcon size={20} className={className} />;
-}
-
-function getBlockColor(title: string) {
-  const t = title.toLowerCase();
-  if (t.includes("ceremony") || t.includes("vow")) return { dot: "bg-amber-400", border: "border-l-amber-400 text-amber-500" };
-  if (t.includes("hair") || t.includes("prep") || t.includes("makeup")) return { dot: "bg-emerald-400", border: "border-l-emerald-400 text-emerald-500" };
-  if (t.includes("photo") || t.includes("portrait") || t.includes("shot")) return { dot: "bg-purple-400", border: "border-l-purple-400 text-purple-400" };
-  if (t.includes("dance") || t.includes("party") || t.includes("dj")) return { dot: "bg-rose-400", border: "border-l-rose-400 text-rose-400" };
-  if (t.includes("dinner") || t.includes("cake") || t.includes("cocktail")) return { dot: "bg-cyan-400", border: "border-l-cyan-400 text-cyan-400" };
-  return { dot: "bg-accent", border: "border-l-accent text-accent" };
-}
 
 export function TimelineEditor({
   event,
@@ -454,7 +416,7 @@ export function TimelineEditor({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search timeline events…"
-              className="h-11 w-full rounded-xl bg-surface-2/70 border border-line pl-10 pr-12 text-[14px] text-ink placeholder:text-ink-faint focus:border-accent focus:bg-surface-1 focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all"
+              className="h-11 w-full rounded-xl bg-surface-2/70 border border-line pl-10 pr-12 text-[14px] text-ink placeholder:text-ink-faint focus:bg-surface-1 transition-all"
             />
             {searchQuery && (
               <button
@@ -520,7 +482,7 @@ export function TimelineEditor({
                 </Button>
                 <Link
                   href={`/events/${event.id}/generate`}
-                  className="inline-flex items-center justify-center gap-2 font-medium rounded-xl h-11 px-4 text-[14.5px] bg-gradient-to-r from-purple-600 via-indigo-600 to-accent text-white shadow-md hover:shadow-lg transition-all"
+                  className="inline-flex items-center justify-center gap-2 font-medium rounded-xl h-11 px-4 text-[14.5px] bg-gradient-to-r from-accent-2 via-accent to-accent-strong text-white hover:brightness-110 transition-all"
                 >
                   <StarsIcon size={18} /> Generate with AI
                 </Link>
@@ -550,35 +512,48 @@ export function TimelineEditor({
             items={filteredBlocks.map((b) => b.id)}
             strategy={verticalListSortingStrategy}
           >
-            <motion.ul
-              className="relative space-y-2.5"
-              initial="hidden"
-              animate="show"
-              variants={{
-                show: { transition: { staggerChildren: 0.04 } }
-              }}
-            >
-              <AnimatePresence mode="popLayout">
-                {filteredBlocks.map((block) => (
-                  <SortableBlock
-                    key={block.id}
-                    block={block}
-                    canEdit={isOwner}
-                    onEdit={() =>
-                      setDraft({
-                        id: block.id,
-                        title: block.title,
-                        start: toTimeInput(block.start_time),
-                        end: toTimeInput(block.end_time),
-                        location: block.location ?? "",
-                        notes: block.notes ?? "",
-                      })
-                    }
-                    onToggleGuestVisible={() => toggleGuestVisible(block)}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.ul>
+            <div className="relative">
+              {/* Connecting thread — behind the cards (painted first among
+                  these positioned siblings), visible only in the gaps
+                  between them, aligned to the marker badges' center. */}
+              {filteredBlocks.length > 1 && (
+                <div
+                  aria-hidden
+                  className={`pointer-events-none absolute top-8 bottom-8 w-px bg-line ${
+                    isOwner ? "left-14" : "left-9"
+                  }`}
+                />
+              )}
+              <motion.ul
+                className="relative space-y-2.5"
+                initial="hidden"
+                animate="show"
+                variants={{
+                  show: { transition: { staggerChildren: 0.04 } }
+                }}
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredBlocks.map((block) => (
+                    <SortableBlock
+                      key={block.id}
+                      block={block}
+                      canEdit={isOwner}
+                      onEdit={() =>
+                        setDraft({
+                          id: block.id,
+                          title: block.title,
+                          start: toTimeInput(block.start_time),
+                          end: toTimeInput(block.end_time),
+                          location: block.location ?? "",
+                          notes: block.notes ?? "",
+                        })
+                      }
+                      onToggleGuestVisible={() => toggleGuestVisible(block)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.ul>
+            </div>
           </SortableContext>
         </DndContext>
       )}
@@ -775,19 +750,16 @@ function SortableBlock({
       layout="position"
       whileHover={isDragging ? {} : { scale: 1.008 }}
       whileDrag={{ scale: 1.02 }}
-      className={`group relative z-[1] flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 shadow-sm transition-all overflow-hidden ${
-        isDragging ? "z-10 bg-surface-2 ring-2 ring-accent shadow-xl" : ""
+      className={`group relative z-[1] flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 transition-all overflow-hidden ${
+        isDragging ? "z-10 bg-surface-2 ring-2 ring-accent" : ""
       }`}
     >
-      {/* Category Left Rail Indicator */}
-      <div className={`w-1.5 shrink-0 ${colorInfo.dot}`} />
-
       {canEdit && (
         <button
           {...attributes}
           {...listeners}
           aria-label="Reorder"
-          className="flex w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing hover:text-ink"
+          className="drag-handle flex w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing hover:text-ink"
         >
           <DragDropVerticalIcon size={20} />
         </button>
@@ -798,8 +770,11 @@ function SortableBlock({
           canEdit ? "" : "pl-4"
         }`}
       >
-        <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-surface-2 text-ink-soft group-hover:bg-accent-tint group-hover:text-accent transition-colors border border-line">
-          <BlockIcon title={block.title} className="transition-colors" />
+        {/* Category marker — a single icon-in-circle badge doubles as the
+            timeline's connecting dot, replacing a separate color rail plus a
+            separate gray icon chip. */}
+        <div className={`shrink-0 flex items-center justify-center h-10 w-10 rounded-full ${colorInfo.tint} ${colorInfo.ink}`}>
+          <BlockIcon title={block.title} size={19} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
