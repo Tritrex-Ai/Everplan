@@ -147,7 +147,7 @@ export default function LoginPage() {
                       transition={{ duration: 0.3, ease: "easeOut" }}
                       className="overflow-hidden"
                     >
-                      <p className="rounded-md bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger shadow-sm">
+                      <p className="rounded-xl bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger">
                         {error}
                       </p>
                     </motion.div>
@@ -226,7 +226,7 @@ export default function LoginPage() {
                     transition={{ duration: 0.3, ease: "easeOut" }}
                     className="overflow-hidden"
                   >
-                    <p className="rounded-md bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger shadow-sm">
+                    <p className="rounded-xl bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger">
                       {error}
                     </p>
                   </motion.div>

@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
       <AuthHero />
       <AuthHeroMobile />
 
-      <div className="relative flex flex-col justify-center px-8 py-12 sm:px-16 lg:min-h-dvh lg:px-20 xl:px-28 bg-surface-0 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.05)] z-10">
+      <div className="relative flex flex-col justify-center px-8 py-12 sm:px-16 lg:min-h-dvh lg:px-20 xl:px-28 bg-surface-0 z-10">
         <div className="relative z-10 mx-auto w-full max-w-lg lg:mx-0 lg:max-w-xl">
           {!ready ? (
             <div className="flex items-center gap-2 text-ink-soft">
@@ -118,7 +118,7 @@ export default function ResetPasswordPage() {
                 </Field>
 
                 {error && (
-                  <p className="rounded-md bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger shadow-sm">
+                  <p className="rounded-xl bg-danger-tint border border-danger/20 px-4 py-3 text-[14px] text-danger">
                     {error}
                   </p>
                 )}
