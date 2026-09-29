@@ -784,19 +784,30 @@ function SortableBlock({
     useSortable({ id: block.id, disabled: !canEdit });
   const colorInfo = getBlockColor(block.title);
 
+  // dnd-kit owns this element's `transform` — it's how the row visually
+  // follows the pointer during a drag and animates into its new slot on
+  // drop. Framer Motion's `layout` prop (and whileHover/whileDrag, which
+  // are also transform-based) fight it silently for the same CSS property:
+  // no visible drag-follow motion while dragging, then a jarring snap once
+  // Framer Motion's own layout animation took back over on drop. A drag
+  // scale effect has to be composed into dnd-kit's own transform string
+  // instead of layered on through a second, competing animation system.
+  const dndTransform = CSS.Transform.toString(transform);
+  const style: React.CSSProperties = {
+    transform: isDragging && dndTransform ? `${dndTransform} scale(1.02)` : dndTransform,
+    transition,
+  };
+
   return (
     <motion.li
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={style}
       variants={{
         hidden: { opacity: 0, y: 15 },
         show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
       }}
-      layout="position"
-      whileHover={isDragging ? {} : { scale: 1.008 }}
-      whileDrag={{ scale: 1.02 }}
-      className={`group relative z-[1] flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 transition-all overflow-hidden ${
-        isDragging ? "z-10 bg-surface-2 ring-2 ring-accent" : ""
+      className={`group relative flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 transition-all overflow-hidden ${
+        isDragging ? "z-20 bg-surface-2 ring-2 ring-accent" : "z-[1]"
       }`}
     >
       {canEdit && (
