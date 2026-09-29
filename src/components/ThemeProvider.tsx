@@ -17,7 +17,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = "everplan_theme";
 
 function getSystemTheme(): ResolvedTheme {
-  if (typeof window === "undefined") return "dark";
+  if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
@@ -35,13 +35,13 @@ function applyThemeClass(res: ResolvedTheme) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
-    return (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
+    if (typeof window === "undefined") return "light";
+    return (localStorage.getItem(STORAGE_KEY) as Theme) || "light";
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    if (typeof window === "undefined") return "dark";
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
+    if (typeof window === "undefined") return "light";
+    const stored = (localStorage.getItem(STORAGE_KEY) as Theme) || "light";
     return stored === "system" ? getSystemTheme() : stored;
   });
 
@@ -50,7 +50,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      const currentStored = (localStorage.getItem(STORAGE_KEY) as Theme) || "dark";
+      const currentStored = (localStorage.getItem(STORAGE_KEY) as Theme) || "light";
       if (currentStored === "system") {
         const sys = getSystemTheme();
         setResolvedTheme(sys);
