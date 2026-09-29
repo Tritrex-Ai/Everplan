@@ -12,7 +12,7 @@ import { Wordmark } from "@/components/Wordmark";
 import { Select } from "@/components/ui";
 import { downloadIcs } from "@/lib/ics";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import {
   Calendar01Icon,
   CalendarAdd01Icon,
@@ -68,6 +68,7 @@ export function EventWorkspaceChrome({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [guestLinkOpen, setGuestLinkOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const optionsSheetDrag = useDragControls();
   const [moreOpen, setMoreOpen] = useState(false);
   const [guestToken, setGuestToken] = useState(event.guest_token);
   const [onlineCount, setOnlineCount] = useState(1);
@@ -174,7 +175,8 @@ export function EventWorkspaceChrome({
     <Select
       value={previewAs ?? ""}
       onChange={(e) => setPreview(e.target.value)}
-      className="!h-8 !w-auto shrink-0 !text-[12.5px]"
+      className="!h-8 !text-[12.5px]"
+      wrapperClassName="w-auto shrink-0"
       aria-label="Preview as"
     >
       <option value="">Preview as…</option>
@@ -218,7 +220,7 @@ export function EventWorkspaceChrome({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 6 }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl bg-surface-1/95 p-1.5 shadow-2xl backdrop-blur-xl border border-line/80"
+              className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl bg-surface-1/95 p-1.5 backdrop-blur-xl border border-line/80"
             >
               <button
                 onClick={() => { setMoreOpen(false); setGuestLinkOpen(true); }}
@@ -361,8 +363,8 @@ export function EventWorkspaceChrome({
         </main>
       </div>
 
-      {/* Mobile Floating Glass Pill Nav Bar */}
-      <nav className="fixed bottom-4 inset-x-4 z-40 lg:hidden glass-panel rounded-2xl p-1.5 flex items-center justify-around shadow-2xl border border-line">
+      {/* Mobile Floating Glass Pill Nav Bar — compact, flat */}
+      <nav className="fixed bottom-3 inset-x-6 z-40 lg:hidden glass-panel rounded-2xl p-1 flex items-center justify-around border border-line">
         {TABS.map((tab) => {
           const Icon = TAB_ICONS[tab.slug];
           const isActive = active === tab.slug;
@@ -370,24 +372,24 @@ export function EventWorkspaceChrome({
             <Link
               key={tab.slug}
               href={`${tab.slug ? `${base}/${tab.slug}` : base}${previewSuffix}`}
-              className={`flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all ${
                 isActive
-                  ? "bg-gradient-to-r from-accent to-emerald-600 text-white shadow-sm font-semibold"
+                  ? "bg-gradient-to-r from-accent to-accent-strong text-white font-semibold"
                   : "text-ink-soft hover:text-ink hover:bg-surface-2/60"
               }`}
             >
-              {Icon && <Icon size={18} className={isActive ? "text-white" : "text-ink-faint"} />}
-              <span className="text-[11px] mt-0.5">{tab.label}</span>
+              {Icon && <Icon size={16} className={isActive ? "text-white" : "text-ink-faint"} />}
+              <span className="text-[10px] mt-0.5">{tab.label}</span>
             </Link>
           );
         })}
         {isOwner && (
           <button
             onClick={() => setOptionsOpen(true)}
-            className="flex-1 flex flex-col items-center justify-center py-1.5 px-2 rounded-xl text-ink-soft hover:text-ink hover:bg-surface-2/60 transition-all"
+            className="flex-1 flex flex-col items-center justify-center py-1 px-1.5 rounded-xl text-ink-soft hover:text-ink hover:bg-surface-2/60 transition-all"
           >
-            <Share01Icon size={18} className="text-ink-faint" />
-            <span className="text-[11px] mt-0.5">Options</span>
+            <Share01Icon size={16} className="text-ink-faint" />
+            <span className="text-[10px] mt-0.5">Options</span>
           </button>
         )}
       </nav>
@@ -408,15 +410,28 @@ export function EventWorkspaceChrome({
       <AnimatePresence>
         {optionsOpen && isOwner && (
           <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setOptionsOpen(false)}>
-            <motion.div 
+            <motion.div
+              drag="y"
+              dragControls={optionsSheetDrag}
+              dragListener={false}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 100 || info.velocity.y > 500) setOptionsOpen(false);
+              }}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="w-full rounded-t-[28px] bg-surface-1 border-t border-line p-5 pb-8 shadow-2xl"
+              className="w-full rounded-t-3xl bg-surface-1 border-t border-line p-5 pb-8"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-ink-faint/30" />
+              <div
+                onPointerDown={(e) => optionsSheetDrag.start(e)}
+                className="-mt-1 mb-3 flex cursor-grab touch-none justify-center py-2 active:cursor-grabbing"
+              >
+                <div className="h-1.5 w-12 rounded-full bg-ink-faint/30" />
+              </div>
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-[17px] font-semibold text-ink">Event Options</h3>
                 <button onClick={() => setOptionsOpen(false)} className="text-[14px] font-medium text-ink-soft hover:text-ink">Cancel</button>
