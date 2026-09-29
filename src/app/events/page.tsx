@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { EmptyState } from "@/components/ui";
+import { Badge, EmptyState } from "@/components/ui";
+import { AddEventProvider, AddEventTriggerButton, AddEventFAB } from "@/components/AddEventButton";
 import { FormattedDate } from "@/components/FormattedTime";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import { AccountMenu } from "@/components/AccountMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Wordmark } from "@/components/Wordmark";
-import { Location01Icon, Calendar01Icon } from "hugeicons-react";
+import { Location01Icon, Calendar01Icon, UserGroupIcon, Camera01Icon } from "hugeicons-react";
 import type { EventRow } from "@/lib/types";
 
 export default async function EventsPage() {
@@ -35,100 +36,105 @@ export default async function EventsPage() {
   const avatarUrl = (user?.user_metadata?.avatar_url as string | undefined) ?? null;
 
   return (
-    <div className="flex min-h-dvh bg-surface-0">
-      <DashboardSidebar fullName={fullName} email={email} avatarUrl={avatarUrl} />
+    <AddEventProvider>
+      <div className="flex min-h-dvh bg-surface-0">
+        <DashboardSidebar fullName={fullName} email={email} avatarUrl={avatarUrl} />
 
-      <main className="flex-1 px-5 py-6 sm:px-8 sm:py-10 overflow-y-auto">
-        <div className="mb-6 flex items-center justify-between lg:hidden">
-          <Wordmark />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <AccountMenu fullName={fullName} email={email} avatarUrl={avatarUrl} compact />
+        <main className="flex-1 px-5 py-6 sm:px-8 sm:py-10 overflow-y-auto">
+          <div className="mb-6 flex items-center justify-between lg:hidden">
+            <Wordmark />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <AccountMenu fullName={fullName} email={email} avatarUrl={avatarUrl} compact />
+            </div>
           </div>
-        </div>
 
-        <header className="mb-10 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-sans text-[28px] font-bold tracking-tight text-ink">Events</h1>
-            <p className="mt-1 text-[15px] text-ink-soft">Manage all your upcoming and past events.</p>
-          </div>
-          <Link
-            href="/events/new"
-            className="inline-flex h-10 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-accent px-5 text-[14.5px] font-semibold text-white transition-transform hover:scale-[1.02] hover:bg-accent-strong"
-          >
-            + Add Event
-          </Link>
-        </header>
+          <header className="mb-10 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-sans text-[28px] font-bold tracking-tight text-ink">Events</h1>
+              <p className="mt-1 text-[15px] text-ink-soft">Manage all your upcoming and past events.</p>
+            </div>
+            <AddEventTriggerButton hideOnMobile />
+          </header>
 
-        {list.length === 0 ? (
-          <EmptyState
-            title="No events yet"
-            body="Create your first event to start building its timeline and shot list."
-            action={
-              <Link
-                href="/events/new"
-                className="inline-flex h-11 items-center rounded-xl bg-accent px-5 text-[15px] font-medium text-white hover:bg-accent-strong"
-              >
-                Create your first event
-              </Link>
-            }
-          />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {list.map((event) => {
-              const isOwner = event.owner_id === user?.id;
-              return (
-                <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface-1 border border-line transition-all duration-200 hover:border-accent/40 hover:shadow-xl">
-                  <Link href={`/events/${event.id}`} className="absolute inset-0 z-10">
-                    <span className="sr-only">View event {event.title}</span>
-                  </Link>
-                  
-                  {/* Card Header */}
-                  <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-accent/25 via-surface-2 to-surface-1 flex flex-col justify-end p-4 border-b border-line/60">
-                    <div className="relative z-10 flex justify-start items-center gap-2">
-                      <span className="inline-flex rounded-full bg-surface-1/80 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-line shadow-sm">
-                        {event.event_type || "Event"}
-                      </span>
-                      {!isOwner && (
-                        <span className="inline-flex rounded-full bg-white/40 px-3 py-1.5 text-[12px] font-semibold text-ink backdrop-blur-md border border-white/40 shadow-sm">
-                          Team
-                        </span>
+          {list.length === 0 ? (
+            <EmptyState
+              title="No events yet"
+              body="Create your first event to start building its timeline and shot list."
+              action={<AddEventTriggerButton className="!h-11 !px-5 !text-[15px]" />}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {list.map((event) => {
+                const isOwner = event.owner_id === user?.id;
+                return (
+                  <div key={event.id} className="group relative flex flex-col overflow-hidden rounded-2xl bg-surface-1 border border-line transition-all duration-200 hover:border-accent/40">
+                    <Link href={`/events/${event.id}`} className="absolute inset-0 z-10">
+                      <span className="sr-only">View event {event.title}</span>
+                    </Link>
+
+                    {/* Card Header */}
+                    <div
+                      className={`relative h-32 w-full overflow-hidden flex flex-col justify-end p-4 border-b border-line/60 ${
+                        event.cover_image_url ? "bg-surface-2" : "bg-gradient-to-br from-accent/25 via-surface-2 to-surface-1"
+                      }`}
+                    >
+                      {event.cover_image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={event.cover_image_url}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
                       )}
+                      {event.cover_image_url && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      )}
+                      <div className="relative z-10 flex justify-start items-center gap-2">
+                        <Badge tone="surface">{event.event_type || "Event"}</Badge>
+                        {!isOwner && <Badge tone="surface">Team</Badge>}
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Card Body */}
-                  <div className="flex flex-col p-5">
-                    <h3 className="truncate font-sans text-[19px] font-extrabold text-ink mb-0.5 group-hover:text-accent transition-colors">
-                      {event.title}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-[14px] text-ink-soft mb-5">
-                      <Location01Icon size={15} strokeWidth={2.5} />
-                      <span className="truncate">{event.location || "No location set"}</span>
-                    </div>
-                    
-                    <div className="mt-auto border-t border-line/30 pt-4 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-[14px] font-medium text-ink">
+
+                    {/* Card Body */}
+                    <div className="flex flex-col p-5">
+                      <h3 className="truncate font-sans text-[19px] font-extrabold text-ink mb-0.5 group-hover:text-accent transition-colors">
+                        {event.title}
+                      </h3>
+                      <div className="flex items-center gap-1.5 text-[14px] text-ink-soft mb-3">
+                        <Location01Icon size={15} strokeWidth={2.5} />
+                        <span className="truncate">{event.location || "No location set"}</span>
+                      </div>
+
+                      {(event.guest_count || event.coverage_needed.length > 0) && (
+                        <div className="flex flex-wrap items-center gap-1.5 mb-4">
+                          {event.guest_count && (
+                            <Badge tone="neutral">
+                              <UserGroupIcon size={12} /> {event.guest_count} guests
+                            </Badge>
+                          )}
+                          {event.coverage_needed.map((c) => (
+                            <Badge key={c} tone="accent" className="capitalize">
+                              <Camera01Icon size={12} /> {c}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-auto border-t border-line/30 pt-4 flex items-center gap-1.5 text-[14px] font-medium text-ink">
                         <Calendar01Icon size={15} strokeWidth={2} />
                         <FormattedDate date={event.date} />
                       </div>
-                      
-                      <div className="flex -space-x-2">
-                        {/* Placeholder avatars for guests/team */}
-                        <img 
-                          src={`https://api.dicebear.com/9.x/notionists/png?seed=${encodeURIComponent(event.title)}`}
-                          alt="Team avatar"
-                          className="h-7 w-7 rounded-full border border-surface-1 bg-surface-2 object-cover"
-                        />
-                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-    </div>
+                );
+              })}
+            </div>
+          )}
+        </main>
+
+        {list.length > 0 && <AddEventFAB />}
+      </div>
+    </AddEventProvider>
   );
 }
