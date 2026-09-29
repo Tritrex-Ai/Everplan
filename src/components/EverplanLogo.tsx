@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 export function EverplanLogo({
   size = 28,
   className = "",
@@ -7,6 +9,12 @@ export function EverplanLogo({
   size?: number;
   className?: string;
 }) {
+  // Each instance needs its own gradient id — Wordmark renders more than
+  // once at a time (e.g. desktop sidebar + CSS-hidden mobile header), and
+  // duplicate SVG ids across simultaneous instances is a classic cause of a
+  // blank/invisible logo in some browsers.
+  const gradientId = useId();
+
   return (
     <svg
       width={size}
@@ -19,7 +27,7 @@ export function EverplanLogo({
       <defs>
         {/* Rich Royal Purple & Indigo Gradient */}
         <linearGradient
-          id="everplan-grad"
+          id={gradientId}
           x1="0%"
           y1="0%"
           x2="100%"
@@ -29,16 +37,6 @@ export function EverplanLogo({
           <stop offset="50%" stopColor="#7c3aed" />
           <stop offset="100%" stopColor="#4f46e5" />
         </linearGradient>
-        {/* Glow Filter */}
-        <filter id="everplan-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow
-            dx="0"
-            dy="2"
-            stdDeviation="3"
-            floodColor="#7c3aed"
-            floodOpacity="0.35"
-          />
-        </filter>
       </defs>
 
       {/* Rounded Squircle Emblem */}
@@ -48,8 +46,7 @@ export function EverplanLogo({
         width="36"
         height="36"
         rx="10"
-        fill="url(#everplan-grad)"
-        filter="url(#everplan-glow)"
+        fill={`url(#${gradientId})`}
       />
 
       {/* Stylized Modern 'E' + Timeline Aperture Track */}
@@ -82,7 +79,7 @@ export function EverplanLogo({
         strokeLinecap="round"
       />
 
-      {/* Glowing Camera Aperture / Event Spark Node on middle bar */}
+      {/* Camera Aperture / Event Spark Node on middle bar */}
       <circle cx="26.5" cy="21.5" r="2.25" fill="#facc15" />
     </svg>
   );
