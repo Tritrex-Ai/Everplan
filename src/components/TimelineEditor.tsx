@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   TouchSensor,
   closestCenter,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -68,6 +70,11 @@ export function TimelineEditor({
   const [blocks, setBlocks] = useState(
     [...initialBlocks].sort((a, b) => a.position - b.position)
   );
+  // The id of the block currently being dragged, if any — drives the
+  // DragOverlay below. Tracked separately from useSortable's own isDragging
+  // per-item flag because the overlay needs the *block data*, not just a
+  // boolean, to render its floating clone.
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [draft, setDraft] = useState<BlockDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -122,7 +129,12 @@ export function TimelineEditor({
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } })
   );
 
+  function onDragStart(e: DragStartEvent) {
+    setActiveId(String(e.active.id));
+  }
+
   async function onDragEnd(e: DragEndEvent) {
+    setActiveId(null);
     const { active, over } = e;
     if (!over || active.id === over.id) return;
 
@@ -440,6 +452,8 @@ export function TimelineEditor({
       )
     : blocks;
 
+  const activeBlock = activeId ? blocks.find((b) => b.id === activeId) ?? null : null;
+
   return (
     <section className="relative pb-12">
       {error && (
@@ -551,7 +565,9 @@ export function TimelineEditor({
           id={`timeline-dnd-${event.id}`}
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={onDragStart}
           onDragEnd={onDragEnd}
+          onDragCancel={() => setActiveId(null)}
         >
           <SortableContext
             items={filteredBlocks.map((b) => b.id)}
@@ -600,6 +616,16 @@ export function TimelineEditor({
               </motion.ul>
             </div>
           </SortableContext>
+          {/* The floating card that actually follows the pointer during a
+              drag — dnd-kit's recommended pattern for a real "lifted card"
+              feel, instead of transforming the in-list item itself (which
+              reads as stiff/glitchy since it's still constrained by the
+              list's own layout, borders, and overflow clipping). No box-
+              shadow, per the app's flat design system — an accent ring does
+              the "picked up" signalling instead. */}
+          <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.2, 0, 0, 1)" }}>
+            {activeBlock ? <BlockDragPreview block={activeBlock} canEdit={isOwner} /> : null}
+          </DragOverlay>
         </DndContext>
       )}
 
@@ -769,51 +795,30 @@ export function TimelineEditor({
   );
 }
 
-function SortableBlock({
+/** The card's visual content — shared between the real sortable row and the
+ * floating DragOverlay clone, so both look identical. `dragHandleProps` is
+ * omitted for the overlay clone, which just shows a static grip icon since
+ * it isn't itself an interactive drag source. */
+function BlockCardBody({
   block,
   canEdit,
   onEdit,
   onToggleGuestVisible,
+  dragHandleProps,
 }: {
   block: BlockRow;
   canEdit: boolean;
-  onEdit: () => void;
-  onToggleGuestVisible: () => void;
+  onEdit?: () => void;
+  onToggleGuestVisible?: () => void;
+  dragHandleProps?: { attributes: ReturnType<typeof useSortable>["attributes"]; listeners: ReturnType<typeof useSortable>["listeners"] };
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: block.id, disabled: !canEdit });
   const colorInfo = getBlockColor(block.title);
-
-  // dnd-kit owns this element's `transform` — it's how the row visually
-  // follows the pointer during a drag and animates into its new slot on
-  // drop. Framer Motion's `layout` prop (and whileHover/whileDrag, which
-  // are also transform-based) fight it silently for the same CSS property:
-  // no visible drag-follow motion while dragging, then a jarring snap once
-  // Framer Motion's own layout animation took back over on drop. A drag
-  // scale effect has to be composed into dnd-kit's own transform string
-  // instead of layered on through a second, competing animation system.
-  const dndTransform = CSS.Transform.toString(transform);
-  const style: React.CSSProperties = {
-    transform: isDragging && dndTransform ? `${dndTransform} scale(1.02)` : dndTransform,
-    transition,
-  };
-
   return (
-    <motion.li
-      ref={setNodeRef}
-      style={style}
-      variants={{
-        hidden: { opacity: 0, y: 15 },
-        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
-      }}
-      className={`group relative flex items-stretch rounded-2xl bg-surface-1 border border-line hover:border-accent/40 transition-all overflow-hidden ${
-        isDragging ? "z-20 bg-surface-2 ring-2 ring-accent" : "z-[1]"
-      }`}
-    >
+    <>
       {canEdit && (
         <button
-          {...attributes}
-          {...listeners}
+          {...(dragHandleProps?.attributes ?? {})}
+          {...(dragHandleProps?.listeners ?? {})}
           aria-label="Reorder"
           className="drag-handle flex w-9 shrink-0 cursor-grab touch-none items-center justify-center text-ink-faint active:cursor-grabbing hover:text-ink"
         >
@@ -821,7 +826,8 @@ function SortableBlock({
         </button>
       )}
       <button
-        onClick={canEdit ? onEdit : undefined}
+        onClick={onEdit}
+        disabled={!canEdit}
         className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-3 text-left ${
           canEdit ? "" : "pl-4"
         }`}
@@ -869,6 +875,68 @@ function SortableBlock({
           </button>
         )}
       </div>
+    </>
+  );
+}
+
+function SortableBlock({
+  block,
+  canEdit,
+  onEdit,
+  onToggleGuestVisible,
+}: {
+  block: BlockRow;
+  canEdit: boolean;
+  onEdit: () => void;
+  onToggleGuestVisible: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: block.id, disabled: !canEdit });
+
+  // The DragOverlay (rendered once, at the list level) is what actually
+  // follows the pointer now — this item just needs to fade into a
+  // placeholder in its own slot while dragging, and otherwise shift via
+  // dnd-kit's own transform as other items get dragged past it. Applying
+  // dnd-kit's transform to THIS element while it's the one being dragged
+  // would move it a second time, fighting the overlay.
+  const style: React.CSSProperties = {
+    transform: isDragging ? undefined : CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <motion.li
+      ref={setNodeRef}
+      style={style}
+      variants={{
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 30 } }
+      }}
+      className={`group relative flex items-stretch rounded-2xl border border-dashed border-line transition-all overflow-hidden ${
+        isDragging ? "z-[1] bg-surface-2/60 opacity-50" : "z-[1] bg-surface-1 border-solid hover:border-accent/40"
+      }`}
+    >
+      <BlockCardBody
+        block={block}
+        canEdit={canEdit}
+        onEdit={onEdit}
+        onToggleGuestVisible={onToggleGuestVisible}
+        dragHandleProps={{ attributes, listeners }}
+      />
     </motion.li>
+  );
+}
+
+/** The floating card that follows the pointer during a drag — dnd-kit's
+ * recommended pattern for a real "lifted card" feel, instead of animating
+ * the in-list item itself (which reads as stiff since it's still
+ * constrained by the list's own layout and overflow clipping). No box-
+ * shadow, per the app's flat design system — a solid accent ring/background
+ * does the "picked up" signalling instead. */
+function BlockDragPreview({ block, canEdit }: { block: BlockRow; canEdit: boolean }) {
+  return (
+    <div className="pointer-events-none flex items-stretch rounded-2xl bg-surface-1 border-2 border-accent ring-4 ring-accent/20 overflow-hidden">
+      <BlockCardBody block={block} canEdit={canEdit} />
+    </div>
   );
 }
