@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Spinner, Textarea } from "@/components/ui";
@@ -310,7 +311,7 @@ export function ShotsPanel({
   return (
     <section>
       {error && (
-        <p className="mb-4 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+        <p className="mb-4 rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
           {error}
         </p>
       )}
@@ -329,13 +330,13 @@ export function ShotsPanel({
           )}
         </div>
       ) : viewerRole === "team" ? (
-        <div className="mb-4 rounded-lg bg-accent-tint px-4 py-3">
+        <div className="mb-4 rounded-xl bg-accent-tint px-4 py-3">
           <p className="text-[13.5px] font-medium text-accent-ink">
             <LockKeyIcon size={14} className="inline mr-1 -mt-0.5" /> Your shots are private until you share them — plus anything others have shared with you.
           </p>
         </div>
       ) : (
-        <div className="mb-4 rounded-lg bg-surface-2 px-4 py-3">
+        <div className="mb-4 rounded-xl bg-surface-2 px-4 py-3">
           <p className="text-[13.5px] text-ink-soft">
             You are seeing the shots that have been shared with you.
           </p>
@@ -384,7 +385,7 @@ export function ShotsPanel({
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl bg-surface-1 border border-line shadow-sm">
+                <div className="overflow-hidden rounded-2xl bg-surface-1 border border-line">
                   {blockShots.length === 0 ? (
                     <p className="px-4 py-3.5 text-[14px] text-ink-faint">
                       {canCreate ? "No shots yet." : "Nothing shared for this block."}
@@ -404,7 +405,7 @@ export function ShotsPanel({
                               aria-label={
                                 shot.status === "captured" ? "Mark planned" : "Mark captured"
                               }
-                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[13px] transition-colors ${
+                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-xl text-[13px] transition-colors ${
                                 shot.status === "captured"
                                   ? "bg-ok text-white"
                                   : "bg-surface-2 text-transparent hover:text-ink-faint"
@@ -415,7 +416,7 @@ export function ShotsPanel({
                           ) : (
                             <span
                               aria-hidden
-                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[13px] ${
+                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-xl text-[13px] ${
                                 shot.status === "captured"
                                   ? "bg-ok text-white"
                                   : "bg-surface-2 text-transparent"
@@ -522,7 +523,7 @@ export function ShotsPanel({
         {draft && (
           <form onSubmit={saveDraft} className="space-y-3">
             {error && (
-              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+              <p className="rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
                 {error}
               </p>
             )}
@@ -582,7 +583,7 @@ export function ShotsPanel({
         {shotlistBlock && (
           <div className="space-y-3">
             {shotlistError === "MISSING_API_KEY" ? (
-              <div className="rounded-lg bg-surface-2 p-4 outline outline-2 outline-accent">
+              <div className="rounded-xl bg-surface-2 p-4 outline outline-2 outline-accent">
                 <h3 className="font-semibold text-accent-ink">API Key Required</h3>
                 <p className="mt-1 text-[13.5px] text-ink-soft">
                   The AI shot list builder requires an Anthropic API key. Add{" "}
@@ -597,7 +598,7 @@ export function ShotsPanel({
                 </p>
               </div>
             ) : shotlistError ? (
-              <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+              <p className="rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
                 {shotlistError}
               </p>
             ) : null}
@@ -639,7 +640,7 @@ export function ShotsPanel({
                 </div>
                 <ul className="max-h-[45dvh] space-y-2 overflow-y-auto">
                   {shotlistDrafts.map((d, i) => (
-                    <li key={i} className="rounded-lg bg-surface-2 p-3">
+                    <li key={i} className="rounded-xl bg-surface-2 p-3">
                       <div className="flex items-center gap-2">
                         <Input
                           value={d.title}
@@ -660,7 +661,7 @@ export function ShotsPanel({
                         <button
                           onClick={() => removeShotlistDraft(i)}
                           aria-label="Remove shot"
-                          className="shrink-0 rounded-md p-1.5 text-ink-faint hover:bg-danger-tint hover:text-danger"
+                          className="shrink-0 rounded-xl p-1.5 text-ink-faint hover:bg-danger-tint hover:text-danger"
                         >
                           <Cancel01Icon size={14} />
                         </button>
@@ -674,7 +675,7 @@ export function ShotsPanel({
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShotlistDrafts(null)}
-                    className="flex-1 rounded-md px-3 py-2.5 text-[13.5px] font-medium text-ink-faint hover:bg-surface-2"
+                    className="flex-1 rounded-xl px-3 py-2.5 text-[13.5px] font-medium text-ink-faint hover:bg-surface-2"
                   >
                     Back
                   </button>
@@ -694,16 +695,19 @@ export function ShotsPanel({
         )}
       </Modal>
 
-      {detailShot && (
-        <ShotDetailModal
-          shot={detailShot}
-          canEdit={canEditShot(viewerRole, detailShot, userId)}
-          onClose={() => setDetailShotId(null)}
-          onChange={(updated) =>
-            setShots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
-          }
-        />
-      )}
+      <AnimatePresence>
+        {detailShot && (
+          <ShotDetailModal
+            key={detailShot.id}
+            shot={detailShot}
+            canEdit={canEditShot(viewerRole, detailShot, userId)}
+            onClose={() => setDetailShotId(null)}
+            onChange={(updated) =>
+              setShots((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+            }
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }

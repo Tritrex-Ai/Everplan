@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Field, Input, Select, Spinner, Textarea } from "@/components/ui";
 import { Cancel01Icon } from "hugeicons-react";
+import { motion, useDragControls } from "framer-motion";
 import type { ShotRow } from "@/lib/types";
 
 type Photo = { path: string; url: string };
@@ -150,18 +151,44 @@ export function ShotDetailModal({
     onChange(data as ShotRow);
   }
 
+  const dragControls = useDragControls();
+
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-0 sm:items-center sm:p-6"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="max-h-[92dvh] w-full overflow-y-auto rounded-t-xl bg-surface-1 p-5 sm:max-w-lg sm:rounded-xl">
+      <motion.div
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 100 || info.velocity.y > 500) onClose();
+        }}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border-t border-line bg-surface-1 p-5 sm:max-w-lg sm:rounded-2xl sm:border"
+      >
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="-mt-2 mb-1 flex cursor-grab touch-none justify-center py-2 active:cursor-grabbing sm:hidden"
+        >
+          <div className="h-1.5 w-12 rounded-full bg-ink-faint/30" />
+        </div>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-[17px] font-semibold">Shot detail</h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-ink-faint hover:bg-surface-2 hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-ink-faint hover:bg-surface-2 hover:text-ink"
           >
             <Cancel01Icon size={16} />
           </button>
@@ -248,7 +275,7 @@ export function ShotDetailModal({
               <Spinner />
             </div>
           ) : photos.length === 0 ? (
-            <p className="rounded-md bg-surface-2 px-4 py-6 text-center text-[13.5px] text-ink-faint">
+            <p className="rounded-xl bg-surface-2 px-4 py-6 text-center text-[13.5px] text-ink-faint">
               {canEdit
                 ? "No reference photos yet — add a pose reference or reminder shot."
                 : "No reference photos on this shot."}
@@ -261,7 +288,7 @@ export function ShotDetailModal({
                   <img
                     src={photo.url}
                     alt=""
-                    className="h-full w-full rounded-md object-cover"
+                    className="h-full w-full rounded-xl object-cover"
                   />
                   {canEdit && (
                     <button
@@ -279,12 +306,12 @@ export function ShotDetailModal({
           )}
 
           {error && (
-            <p className="mt-2 rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+            <p className="mt-2 rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
               {error}
             </p>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
