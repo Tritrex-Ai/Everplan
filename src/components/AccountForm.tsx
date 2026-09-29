@@ -133,7 +133,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
   return (
     <div className="space-y-6">
       {/* Profile Photo Section */}
-      <div className="rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
+      <div className="rounded-2xl border border-line bg-surface-1 p-6">
         <h2 className="text-[16px] font-semibold text-ink">Profile photo</h2>
         <p className="mt-0.5 text-[13px] text-ink-soft">
           This will be displayed on your events, shared timelines, and account menu.
@@ -145,10 +145,10 @@ export function AccountForm({ profile }: { profile: Profile }) {
               <img
                 src={avatarUrl}
                 alt={fullName || profile.email}
-                className="h-20 w-20 rounded-full border-2 border-surface-0 bg-surface-2 object-cover shadow-md"
+                className="h-20 w-20 rounded-full border-2 border-surface-0 bg-surface-2 object-cover"
               />
             ) : (
-              <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-surface-0 bg-gradient-to-tr from-accent to-purple-600 text-[26px] font-bold text-white shadow-md">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-surface-0 bg-gradient-to-tr from-accent to-accent-strong text-[26px] font-bold text-white">
                 {initial}
               </div>
             )}
@@ -172,7 +172,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingPhoto}
-                className="inline-flex h-9 items-center gap-2 rounded-xl bg-accent px-4 text-[13.5px] font-semibold text-white shadow-sm transition-all hover:bg-accent-strong active:scale-95 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-2 rounded-xl bg-accent px-4 text-[13.5px] font-semibold text-white transition-all hover:bg-accent-strong disabled:opacity-50"
               >
                 <Camera01Icon size={16} />
                 {avatarUrl ? "Change photo" : "Upload photo"}
@@ -183,7 +183,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
                   type="button"
                   onClick={handleRemovePhoto}
                   disabled={uploadingPhoto}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:border-danger/30 hover:bg-danger-tint hover:text-danger active:scale-95 disabled:opacity-50"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:border-danger/30 hover:bg-danger-tint hover:text-danger disabled:opacity-50"
                 >
                   <Delete02Icon size={15} />
                   Remove
@@ -203,7 +203,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
       </div>
 
       {/* Profile Details Form */}
-      <form onSubmit={submit} className="space-y-6 rounded-2xl border border-line bg-surface-1 p-6 shadow-sm">
+      <form onSubmit={submit} className="space-y-6 rounded-2xl border border-line bg-surface-1 p-6">
         <div className="space-y-4">
           <Field label="Email address" hint="Your login email cannot be changed here.">
             <Input value={profile.email} disabled readOnly className="opacity-75 cursor-not-allowed bg-surface-2/40" />
@@ -240,9 +240,9 @@ export function AccountForm({ profile }: { profile: Profile }) {
                   key={p}
                   type="button"
                   onClick={() => toggleProfession(p)}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13.5px] font-medium transition-all active:scale-95 ${
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-[13.5px] font-medium transition-all ${
                     active
-                      ? "bg-accent text-white shadow-sm ring-1 ring-accent"
+                      ? "bg-accent text-white ring-1 ring-accent"
                       : "border border-line bg-surface-2/80 text-ink-soft hover:bg-surface-3 hover:text-ink"
                   }`}
                 >
@@ -275,9 +275,9 @@ export function AccountForm({ profile }: { profile: Profile }) {
                     setTeamSize(t.value);
                     setSaved(false);
                   }}
-                  className={`flex flex-col items-start rounded-xl p-3.5 text-left border transition-all active:scale-[0.99] ${
+                  className={`flex flex-col items-start rounded-xl p-3.5 text-left border transition-all ${
                     active
-                      ? "border-accent bg-accent-tint/40 shadow-xs ring-1 ring-accent"
+                      ? "border-accent bg-accent-tint/40 ring-1 ring-accent"
                       : "border-line bg-surface-2/50 text-ink-soft hover:bg-surface-2 hover:border-line/80"
                   }`}
                 >

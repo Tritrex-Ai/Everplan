@@ -71,13 +71,13 @@ export function AccountMenu({
         <img
           src={avatarUrl}
           alt={label}
-          className={`${dimClass} shrink-0 rounded-full border-2 border-surface-0 bg-surface-2 object-cover shadow-sm`}
+          className={`${dimClass} shrink-0 rounded-full border-2 border-surface-0 bg-surface-2 object-cover`}
         />
       );
     }
     return (
       <div
-        className={`${dimClass} shrink-0 rounded-full border-2 border-surface-0 bg-gradient-to-tr from-accent to-purple-600 flex items-center justify-center text-white font-semibold text-[13.5px] shadow-sm`}
+        className={`${dimClass} shrink-0 rounded-full border-2 border-surface-0 bg-gradient-to-tr from-accent to-accent-strong flex items-center justify-center text-white font-semibold text-[13.5px]`}
       >
         {initial}
       </div>
@@ -92,8 +92,8 @@ export function AccountMenu({
         aria-expanded={open}
         className={
           compact
-            ? "flex items-center rounded-full transition-transform active:scale-95 hover:opacity-90"
-            : "flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-all hover:bg-surface-2 active:scale-[0.99]"
+            ? "flex items-center rounded-full transition-transform hover:opacity-90"
+            : "flex w-full items-center gap-3 rounded-2xl p-2 text-left transition-all hover:bg-surface-2"
         }
       >
         {renderAvatar(compact ? "h-8.5 w-8.5" : "h-9 w-9")}
@@ -112,7 +112,7 @@ export function AccountMenu({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: compact ? 6 : -6 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className={`absolute z-50 w-64 overflow-hidden rounded-2xl bg-surface-1/95 p-2 shadow-2xl backdrop-blur-xl border border-line/80 ${
+            className={`absolute z-50 w-64 overflow-hidden rounded-2xl bg-surface-1/95 p-2 backdrop-blur-xl border border-line/80 ${
               compact ? "right-0 top-full mt-2" : "bottom-full left-0 mb-2"
             }`}
           >
@@ -134,7 +134,7 @@ export function AccountMenu({
             <button
               onClick={signOut}
               disabled={signingOut}
-              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink-soft transition-colors hover:bg-danger-tint hover:text-danger disabled:opacity-50 active:scale-[0.99]"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium text-ink-soft transition-colors hover:bg-danger-tint hover:text-danger disabled:opacity-50"
             >
               <Logout01Icon size={18} /> {signingOut ? "Signing out…" : "Sign out"}
             </button>

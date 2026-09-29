@@ -122,12 +122,12 @@ export function InviteDialog({
           </Select>
         </Field>
         {error && (
-          <p className="rounded-md bg-danger-tint px-3 py-2 text-[13px] text-danger">
+          <p className="rounded-xl bg-danger-tint px-3 py-2 text-[13px] text-danger">
             {error}
           </p>
         )}
         {notice && (
-          <p className="rounded-md bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
+          <p className="rounded-xl bg-warn-tint px-3 py-2 text-[13px] text-warn-ink">
             {notice}
           </p>
         )}
@@ -145,7 +145,7 @@ export function InviteDialog({
             {members.map((m) => (
               <li
                 key={m.id}
-                className="flex items-center justify-between rounded-md bg-surface-2 px-3 py-2"
+                className="flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2"
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <span
