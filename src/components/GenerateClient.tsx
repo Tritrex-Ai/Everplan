@@ -131,14 +131,20 @@ export function GenerateClient({
     setSaving(true);
     setError(null);
 
-    const rows = drafts.map((d, i) => ({
-      event_id: event.id,
-      title: d.title,
-      ...blockTimes(event.date, d.start, d.end),
-      location: d.location || null,
-      notes: d.notes || null,
-      position: i,
-    }));
+    // The model generally returns blocks in chronological order, but not
+    // always exactly — sort by actual start time before assigning position
+    // so a slightly-out-of-order response (common with dense, multi-page
+    // source documents) can't save the timeline visually out of sequence.
+    const rows = drafts
+      .map((d) => ({
+        event_id: event.id,
+        title: d.title,
+        ...blockTimes(event.date, d.start, d.end),
+        location: d.location || null,
+        notes: d.notes || null,
+      }))
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+      .map((row, i) => ({ ...row, position: i }));
 
     // Capture the old block ids before touching anything, so the delete
     // below can target exactly those rows — not the ones we're about to

@@ -50,7 +50,7 @@ const ResultSchema = z.object({
       })
     )
     .min(1)
-    .max(20),
+    .max(60),
 });
 
 export async function POST(request: Request) {
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
   try {
     const response = await anthropic.messages.create({
       model: "claude-opus-4-8",
-      max_tokens: 8192,
+      max_tokens: 16000,
       system: TIMELINE_SYSTEM_PROMPT,
       output_config: {
         format: {
