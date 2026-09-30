@@ -90,6 +90,18 @@ export type ShotRow = {
   duration_minutes: number;
 };
 
+export type EventImageRow = {
+  id: string;
+  event_id: string;
+  storage_path: string;
+  caption: string | null;
+  guest_name: string | null;
+  approved: boolean;
+  captured_at: string;
+  uploaded_by: string | null;
+  created_at: string;
+};
+
 /** A block as returned by the AI builder, before it is saved. */
 export type DraftBlock = {
   title: string;
