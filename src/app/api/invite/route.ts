@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const RequestSchema = z.object({
   eventId: z.string().uuid(),
@@ -9,6 +10,15 @@ const RequestSchema = z.object({
   role: z.enum(["team", "vendor", "client"]),
   color: z.string(),
 });
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -19,12 +29,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
+  const withinLimit = await checkRateLimit(`user:${user.id}:invite`, 30, 3600);
+  if (!withinLimit) {
+    return NextResponse.json(
+      { error: "You're sending a lot of invites — please wait a bit and try again." },
+      { status: 429 }
+    );
+  }
+
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
   const { eventId, email, role, color } = parsed.data;
+
+  // RLS already restricts this insert to the event owner (see "owners manage
+  // members" policy) — this check just fails fast with a clear 403 instead
+  // of relying solely on the DB to reject it.
+  const { data: event } = await supabase
+    .from("events")
+    .select("title, owner_id")
+    .eq("id", eventId)
+    .maybeSingle();
+
+  if (!event) {
+    return NextResponse.json({ error: "That event no longer exists." }, { status: 404 });
+  }
+  if (event.owner_id !== user.id) {
+    return NextResponse.json(
+      { error: "Only the event owner can invite people." },
+      { status: 403 }
+    );
+  }
 
   // Insert into DB
   const { data: member, error: insertError } = await supabase
@@ -58,20 +95,14 @@ export async function POST(request: Request) {
   if (process.env.RESEND_API_KEY) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const roleName = role === "team" ? "Team member" : role === "client" ? "Client" : "Vendor";
-
-    const { data: event } = await supabase
-      .from("events")
-      .select("title")
-      .eq("id", eventId)
-      .single();
-    const eventTitle = event?.title ?? "an event";
+    const eventTitle = escapeHtml(event.title ?? "an event");
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
       .single();
-    const inviterName = profile?.full_name ?? "Someone";
+    const inviterName = escapeHtml(profile?.full_name ?? "Someone");
 
     // request.url reflects whatever domain the request actually hit — a
     // per-deployment preview URL, localhost, or a stale deployment alias if
