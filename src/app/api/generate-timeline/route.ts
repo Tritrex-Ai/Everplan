@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import {
   TIMELINE_OUTPUT_SCHEMA,
   TIMELINE_SYSTEM_PROMPT,
@@ -60,6 +61,14 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
+  const withinLimit = await checkRateLimit(`user:${user.id}:generate`, 20, 3600);
+  if (!withinLimit) {
+    return NextResponse.json(
+      { error: "You're generating a lot of timelines — please wait a bit and try again." },
+      { status: 429 }
+    );
   }
 
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));
@@ -129,7 +138,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-8",
+      model: "claude-sonnet-5-5",
       max_tokens: 16000,
       system: TIMELINE_SYSTEM_PROMPT,
       output_config: {

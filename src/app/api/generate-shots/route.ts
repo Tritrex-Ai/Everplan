@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { canCreateShots, resolveViewerRole } from "@/lib/roles";
 import {
   SHOTLIST_OUTPUT_SCHEMA,
@@ -37,6 +38,14 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
+  const withinLimit = await checkRateLimit(`user:${user.id}:generate`, 20, 3600);
+  if (!withinLimit) {
+    return NextResponse.json(
+      { error: "You're generating a lot of shot lists — please wait a bit and try again." },
+      { status: 429 }
+    );
   }
 
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));
@@ -103,7 +112,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-opus-4-8",
+      model: "claude-sonnet-5-5",
       max_tokens: 8192,
       system: SHOTLIST_SYSTEM_PROMPT,
       output_config: {
