@@ -18,6 +18,7 @@ import {
   CalendarAdd01Icon,
   PrinterIcon,
   Camera01Icon,
+  Image01Icon,
   Activity01Icon,
   UserAdd01Icon,
   Link01Icon,
@@ -31,12 +32,14 @@ import type { BlockRow, EventRow } from "@/lib/types";
 const TABS = [
   { slug: "", label: "Timeline" },
   { slug: "shots", label: "Shots" },
+  { slug: "photos", label: "Photos" },
   { slug: "live", label: "Live" },
 ];
 
 const TAB_ICONS: Record<string, React.ElementType> = {
   "": Calendar01Icon,
   "shots": Camera01Icon,
+  "photos": Image01Icon,
   "live": Activity01Icon,
 };
 
