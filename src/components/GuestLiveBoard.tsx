@@ -6,6 +6,7 @@ import { splitBoard } from "@/lib/time";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Button, Modal } from "@/components/ui";
 import { Wordmark } from "@/components/Wordmark";
+import { GuestPhotoGallery } from "@/components/GuestPhotoGallery";
 import type { BlockRow } from "@/lib/types";
 
 const REMINDER_WINDOW_MS = 2 * 60 * 1000;
@@ -19,14 +20,17 @@ type GuestEvent = { id: string; title: string; date: string; location: string | 
 export function GuestLiveBoard({
   event,
   initialBlocks,
+  token,
 }: {
   event: GuestEvent;
   initialBlocks: BlockRow[];
+  token: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [blocks, setBlocks] = useState(initialBlocks);
   const [now, setNow] = useState(() => new Date());
   const [live, setLive] = useState(false);
+  const [tab, setTab] = useState<"timeline" | "photos">("timeline");
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 15_000);
@@ -106,7 +110,23 @@ export function GuestLiveBoard({
           </span>
         </header>
 
-        {blocks.length === 0 ? (
+        <div className="mb-5 flex gap-1 rounded-xl bg-night-1 p-1">
+          {(["timeline", "photos"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 rounded-lg py-2 text-[13.5px] font-semibold capitalize transition-colors ${
+                tab === t ? "bg-night-2 text-night-ink" : "text-night-ink-soft"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        {tab === "photos" ? (
+          <GuestPhotoGallery token={token} />
+        ) : blocks.length === 0 ? (
           <p className="rounded-lg bg-night-1 px-5 py-10 text-center text-[14px] text-night-ink-soft">
             The timeline is not built yet — check back soon.
           </p>

@@ -45,6 +45,10 @@ export default async function GuestLivePage({
     .order("position");
 
   return (
-    <GuestLiveBoard event={event} initialBlocks={(blocks ?? []) as BlockRow[]} />
+    <GuestLiveBoard
+      event={event}
+      initialBlocks={(blocks ?? []) as BlockRow[]}
+      token={token}
+    />
   );
 }
