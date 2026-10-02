@@ -84,6 +84,7 @@ export type ShotRow = {
   priority: "low" | "normal" | "high";
   assignee_id: string | null;
   reference_images: string[];
+  reference_links: string[];
   captured_by: string | null;
   captured_at: string | null;
   created_by: string;
