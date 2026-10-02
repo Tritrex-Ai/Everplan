@@ -6,9 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { FormattedTime } from "@/components/FormattedTime";
 import { Badge, Button, EmptyState, Field, Input, Modal, Select, Spinner, Textarea } from "@/components/ui";
 import { ShotDetailModal } from "@/components/ShotDetailModal";
+import { LinkList, StagedPhotoPicker } from "@/components/ShotReferenceInputs";
 import { canCreateShots, canEditShot, canToggleShotStatus, type ViewerRole } from "@/lib/roles";
+import { uploadShotPhotos } from "@/lib/shot-photos";
 import { durationMinutes } from "@/lib/time";
-import { LockKeyIcon, Camera01Icon, Cancel01Icon, Tick01Icon, StarsIcon } from "hugeicons-react";
+import { LockKeyIcon, Camera01Icon, Cancel01Icon, Link01Icon, Tick01Icon, StarsIcon } from "hugeicons-react";
 import type { BlockRow, ShotRow } from "@/lib/types";
 
 const DEFAULT_SHOT_MINUTES = 5;
@@ -21,6 +23,9 @@ type ShotDraft = {
   description: string;
   priority: "low" | "normal" | "high";
   durationMinutes: number;
+  files: File[];
+  links: string[];
+  share: boolean;
 };
 
 type ShotlistDraft = { title: string; description: string; duration_minutes: number };
@@ -219,6 +224,8 @@ export function ShotsPanel({
         description: draft.description || null,
         priority: draft.priority,
         duration_minutes: draft.durationMinutes,
+        visibility: draft.share ? "shared" : "private",
+        reference_links: draft.links,
       })
       .select("*")
       .single();
@@ -228,9 +235,42 @@ export function ShotsPanel({
       setBusy(false);
       return;
     }
-    setShots((prev) => [...prev, data as ShotRow]);
+
+    // Photos are keyed on the shot's id in storage, so they can only upload
+    // once the row exists. A failed upload never loses the shot itself.
+    let saved = data as ShotRow;
+    let photoError: string | null = null;
+    if (draft.files.length > 0) {
+      const { paths, error: uploadError } = await uploadShotPhotos(
+        supabase,
+        eventId,
+        saved.id,
+        draft.files
+      );
+      photoError = uploadError;
+      if (paths.length > 0) {
+        const { data: withPhotos } = await supabase
+          .from("shots")
+          .update({ reference_images: paths })
+          .eq("id", saved.id)
+          .select("*")
+          .single();
+        if (withPhotos) saved = withPhotos as ShotRow;
+        else photoError = photoError ?? "Couldn't attach the photos to this shot.";
+      }
+    }
+
+    // Realtime may have already merged this row in while photos uploaded.
+    setShots((prev) =>
+      prev.some((s) => s.id === saved.id)
+        ? prev.map((s) => (s.id === saved.id ? saved : s))
+        : [...prev, saved]
+    );
     setBusy(false);
     setDraft(null);
+    if (photoError) {
+      setError(`Shot added, but some photos didn't upload: ${photoError} Open the shot to retry.`);
+    }
   }
 
   function openShotlist(block: BlockRow) {
@@ -299,7 +339,10 @@ export function ShotsPanel({
       setShotlistSaving(false);
       return;
     }
-    setShots((prev) => [...prev, ...(data as ShotRow[])]);
+    setShots((prev) => {
+      const have = new Set(prev.map((s) => s.id));
+      return [...prev, ...(data as ShotRow[]).filter((s) => !have.has(s.id))];
+    });
     setShotlistSaving(false);
     closeShotlist();
   }
@@ -444,6 +487,11 @@ export function ShotsPanel({
                                   <Camera01Icon size={14} className="-mt-0.5" />{shot.reference_images.length}
                                 </span>
                               )}
+                              {shot.reference_links?.length > 0 && (
+                                <span className="shrink-0 flex items-center gap-0.5 text-[11.5px] text-ink-faint">
+                                  <Link01Icon size={14} className="-mt-0.5" />{shot.reference_links.length}
+                                </span>
+                              )}
                             </span>
                             {shot.description && (
                               <span className="block truncate text-[12.5px] text-ink-faint">
@@ -498,6 +546,9 @@ export function ShotsPanel({
                             description: "",
                             priority: "normal",
                             durationMinutes: DEFAULT_SHOT_MINUTES,
+                            files: [],
+                            links: [],
+                            share: false,
                           })
                         }
                         className="flex-1 bg-surface-2/50 px-4 py-2.5 text-left text-[13.5px] font-medium text-accent-ink hover:bg-accent-tint/50"
@@ -568,6 +619,33 @@ export function ShotsPanel({
                 />
               </Field>
             </div>
+            <Field label="Reference photos">
+              <StagedPhotoPicker
+                files={draft.files}
+                onChange={(files) => setDraft({ ...draft, files })}
+              />
+            </Field>
+            <Field label="Reference links">
+              <LinkList
+                links={draft.links}
+                canEdit
+                onChange={(links) => setDraft({ ...draft, links })}
+              />
+            </Field>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-surface-2 px-3.5 py-3">
+              <input
+                type="checkbox"
+                checked={draft.share}
+                onChange={(e) => setDraft({ ...draft, share: e.target.checked })}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+              />
+              <span>
+                <span className="block text-[14px] font-medium text-ink">Share with the event</span>
+                <span className="block text-[12.5px] text-ink-soft">
+                  Everyone on this event can see the shot and its photos and links. Otherwise it stays private to you.
+                </span>
+              </span>
+            </label>
             <Button type="submit" disabled={busy} className="w-full">
               {busy ? "Adding…" : "Add shot"}
             </Button>

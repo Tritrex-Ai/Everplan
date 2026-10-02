@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Button, Field, Input, Select, Spinner, Textarea } from "@/components/ui";
-import { Cancel01Icon } from "hugeicons-react";
+import { LinkList } from "@/components/ShotReferenceInputs";
+import { uploadShotPhotos } from "@/lib/shot-photos";
+import { Cancel01Icon, LockKeyIcon } from "hugeicons-react";
 import { motion, useDragControls } from "framer-motion";
 import type { ShotRow } from "@/lib/types";
 
@@ -33,6 +35,7 @@ export function ShotDetailModal({
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
+  const [savingLinks, setSavingLinks] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,21 +90,13 @@ export function ShotDetailModal({
     setUploading(true);
     setError(null);
 
-    const newPaths: string[] = [];
-    for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${shot.event_id}/${shot.id}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("shot-photos").upload(path, file);
-      if (error) {
-        if (error.message.includes("Bucket not found") || error.message.includes("row-level security") || error.message.includes("new row violates row-level security policy")) {
-          setError("Storage bucket is not configured. Run the storage_setup.sql migration.");
-        } else {
-          setError(error.message);
-        }
-        continue;
-      }
-      newPaths.push(path);
-    }
+    const { paths: newPaths, error: uploadError } = await uploadShotPhotos(
+      supabase,
+      shot.event_id,
+      shot.id,
+      Array.from(files)
+    );
+    if (uploadError) setError(uploadError);
 
     if (newPaths.length > 0) {
       const updated = [...shot.reference_images, ...newPaths];
@@ -148,6 +143,39 @@ export function ShotDetailModal({
     // the DB row are confirmed gone — an optimistic removal here would show
     // a photo as deleted even if either call actually failed.
     setPhotos((prev) => prev.filter((p) => p.path !== path));
+    onChange(data as ShotRow);
+  }
+
+  async function saveLinks(next: string[]) {
+    setSavingLinks(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from("shots")
+      .update({ reference_links: next })
+      .eq("id", shot.id)
+      .select("*")
+      .single();
+    setSavingLinks(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    onChange(data as ShotRow);
+  }
+
+  async function toggleShare() {
+    const next = shot.visibility === "shared" ? "private" : "shared";
+    setError(null);
+    const { data, error } = await supabase
+      .from("shots")
+      .update({ visibility: next })
+      .eq("id", shot.id)
+      .select("*")
+      .single();
+    if (error) {
+      setError(error.message);
+      return;
+    }
     onChange(data as ShotRow);
   }
 
@@ -244,6 +272,30 @@ export function ShotDetailModal({
           </div>
         )}
 
+        {canEdit && (
+          <button
+            onClick={toggleShare}
+            className={`mt-4 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left ${
+              shot.visibility === "shared" ? "bg-accent-tint" : "bg-surface-2"
+            }`}
+          >
+            <LockKeyIcon
+              size={16}
+              className={shot.visibility === "shared" ? "text-accent-ink" : "text-ink-faint"}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[14px] font-medium text-ink">
+                {shot.visibility === "shared" ? "Shared with the event" : "Private to you"}
+              </span>
+              <span className="block text-[12.5px] text-ink-soft">
+                {shot.visibility === "shared"
+                  ? "Everyone on this event can see this shot, its photos and links. Tap to make it private."
+                  : "Only you can see this shot. Tap to share it with everyone on the event."}
+              </span>
+            </span>
+          </button>
+        )}
+
         <div className="mt-5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
@@ -302,6 +354,20 @@ export function ShotDetailModal({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {(canEdit || (shot.reference_links ?? []).length > 0) && (
+            <div className="mt-5">
+              <p className="mb-2 text-[13px] font-semibold uppercase tracking-wide text-ink-faint">
+                Reference links
+              </p>
+              <LinkList
+                links={shot.reference_links ?? []}
+                canEdit={canEdit}
+                disabled={savingLinks}
+                onChange={saveLinks}
+              />
             </div>
           )}
 
